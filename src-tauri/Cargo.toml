@@ -26,4 +26,5 @@ libp2p = { version = "0.56.0", features = ["full"] }
 tokio = { version = "1.49.0", features = ["full"] }
 futures = "0.3.32"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
+chrono = "0.4.43"
 

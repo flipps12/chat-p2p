@@ -8,6 +8,7 @@ use tokio::sync::mpsc;
 use tauri::Manager;
 use state::AppState;
 
+/// Comando para enviar mensajes de chat
 #[tauri::command]
 async fn send_message(
     msg: String,
@@ -19,12 +20,47 @@ async fn send_message(
         .map_err(|e| e.to_string())
 }
 
+/// Comando para conectar manualmente a un peer
+#[tauri::command]
+async fn connect_to_peer(
+    address: String,
+    state: tauri::State<'_, AppState>,
+) -> Result<(), String> {
+    // Enviar comando especial CMD:CONNECT:
+    state.p2p_sender
+        .send(format!("CMD:CONNECT:{}", address))
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Comando para obtener lista de peers conectados
+#[tauri::command]
+async fn get_connected_peers(
+    state: tauri::State<'_, AppState>,
+) -> Result<(), String> {
+    state.p2p_sender
+        .send("CMD:GET_PEERS".to_string())
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Comando para obtener información del nodo local (peer_id y direcciones)
+#[tauri::command]
+async fn get_my_info(
+    state: tauri::State<'_, AppState>,
+) -> Result<(), String> {
+    state.p2p_sender
+        .send("CMD:GET_INFO".to_string())
+        .await
+        .map_err(|e| e.to_string())
+}
+
 fn main() {
     tauri::Builder::default()
         .setup(|app| {
             let (tx, rx) = mpsc::channel(32);
 
-            // ✅ CLONAR el handle para mover al async task
+            // Clonar el handle para mover al async task
             let app_handle = app.handle().clone();
 
             // Spawn P2P worker en background
@@ -39,7 +75,12 @@ fn main() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![send_message])
+        .invoke_handler(tauri::generate_handler![
+            send_message,
+            connect_to_peer,
+            get_connected_peers,
+            get_my_info,
+        ])
         .run(tauri::generate_context!())
         .expect("error running tauri");
 }
