@@ -2,6 +2,7 @@ use libp2p::{
     gossipsub, mdns, noise,
     swarm::{NetworkBehaviour, SwarmEvent},
     tcp, yamux, PeerId, Multiaddr,
+    multiaddr::Protocol,
 };
 use serde::Serialize;
 use std::{
@@ -32,6 +33,21 @@ struct MyAddressInfo {
     peer_id: String,
     addresses: Vec<String>,
 }
+
+async fn connect_to_peer(addr: Multiaddr, swarm: &mut libp2p::Swarm<MyBehaviour>) -> Result<(), Box<dyn Error>> {
+    match swarm.dial(addr.clone()) {
+        Ok(_) => {
+            println!("✅ Dialing {}", addr);
+            // save peer and ipv6 address to local state if needed
+            Ok(())
+        }
+        Err(e) => {
+            eprintln!("❌ Failed to dial: {}", e);
+            Err(Box::new(e))
+        }
+    }
+}
+
 
 pub async fn start_p2p(
     mut rx: mpsc::Receiver<String>,
@@ -83,6 +99,7 @@ pub async fn start_p2p(
     let local_peer_id = *swarm.local_peer_id();
     println!("🆔 Local Peer ID: {}", local_peer_id);
 
+    swarm.listen_on("/ip6/::/tcp/0".parse()?)?;
     swarm.listen_on("/ip4/0.0.0.0/tcp/0".parse()?)?;
 
     println!("✅ P2P network started");
@@ -102,13 +119,12 @@ pub async fn start_p2p(
                     
                     match addr_str.parse::<Multiaddr>() {
                         Ok(addr) => {
-                            match swarm.dial(addr.clone()) {
-                                Ok(_) => {
+                            match connect_to_peer(addr.clone(), &mut swarm).await {
+                                Ok(()) => {
                                     println!("✅ Dialing {}", addr);
                                     let _ = app.emit("connection-status", "Connecting...");
                                 }
                                 Err(e) => {
-                                    eprintln!("❌ Failed to dial: {}", e);
                                     let _ = app.emit("connection-error", format!("Failed to dial: {}", e));
                                 }
                             }
@@ -174,9 +190,16 @@ pub async fn start_p2p(
                     println!("🔗 Connection established with: {} at {}", 
                         peer_id, endpoint.get_remote_address());
                     
+                    let mut clean_addr = endpoint.get_remote_address().clone();
+                    
+                    clean_addr = clean_addr
+                        .into_iter()
+                        .filter(|p| !matches!(p, Protocol::P2p(_)))
+                        .collect();
+
                     let peer_info = PeerDiscovered {
                         peer_id: peer_id.to_string(),
-                        address: endpoint.get_remote_address().to_string(),
+                        address: clean_addr.to_string(),
                     };
                     let _ = app.emit("peer-connected", peer_info);
                 }
@@ -197,16 +220,30 @@ pub async fn start_p2p(
                 )) => {
                     for (peer_id, multiaddr) in peers {
                         println!("👋 Discovered peer: {} at {}", peer_id, multiaddr);
-                        
-                        // Agregar a gossipsub
-                        swarm.behaviour_mut().gossipsub.add_explicit_peer(&peer_id);
-                        
+
                         // Emitir al frontend
                         let peer_info = PeerDiscovered {
                             peer_id: peer_id.to_string(),
                             address: multiaddr.to_string(),
                         };
-                        let _ = app.emit("peer-discovered", peer_info);
+
+                        let _ = app.emit("peer-discovered", &peer_info);
+                        println!("✅ Dialing {}", multiaddr);
+                        
+                        // if let Err(e) = swarm.dial(multiaddr.clone()) {
+                        //     println!("❌ Dial error: {:?}", e);
+                        // }  
+                        match connect_to_peer(multiaddr.clone(), &mut swarm).await {
+                            Ok(()) => {
+                                println!("✅ Connected to {}", multiaddr);
+                                swarm.behaviour_mut().gossipsub.add_explicit_peer(&peer_id);
+
+                                // let _ = app.emit("peer-connected", &peer_info); already emitted in the listeners
+                            }
+                            Err(e) => {
+                                let _ = app.emit("connection-error", format!("Failed to dial: {}", e));
+                            }
+                        }
                     }
                 }
 
