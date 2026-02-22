@@ -135,7 +135,7 @@ function App() {
           )}
 
           {/* My Info */}
-          {myInfo && (
+          {/* {myInfo && (
             <div className="bg-white/5 rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-purple-300 text-sm font-semibold">Your Peer ID:</span>
@@ -173,7 +173,7 @@ function App() {
                 </>
               )}
             </div>
-          )}
+          )} */}
         </div>
 
         <div className="flex-1 flex gap-2 min-h-0">
