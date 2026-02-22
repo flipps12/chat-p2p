@@ -1,10 +1,18 @@
 // Types para la aplicación P2P Chat
 
 export interface Message {
+  topic: string
   from: string
   content: string
   timestamp: string
   own: boolean
+}
+
+export interface SendMessagePayload {
+  msg: string,
+  topic: string,
+  peer_id: string,
+  uuid?: string
 }
 
 export interface Peer {
@@ -29,6 +37,7 @@ export interface MessagePayload {
   from: string
   content: string
   timestamp: string
+  topic: string
 }
 
 export interface PeerSubscribedPayload {

@@ -4,7 +4,7 @@ use libp2p::{
     tcp, yamux, PeerId, Multiaddr,
     multiaddr::Protocol,
 };
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::{
     collections::hash_map::DefaultHasher,
     error::Error,
@@ -26,6 +26,22 @@ struct MyBehaviour {
 struct PeerDiscovered {
     peer_id: String,
     address: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Message {
+    peer_id: String,
+    msg: String,
+    topic: String,
+    uuid: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct SendMessagePayload {
+    peer_id: String,
+    content: String,
+    topic: String,
+    uuid: String,
 }
 
 #[derive(Serialize, Clone, Debug)]
@@ -158,13 +174,16 @@ pub async fn start_p2p(
                     let topic_parsed = gossipsub::IdentTopic::new(topic);
                     swarm.behaviour_mut().gossipsub.subscribe(&topic_parsed)?;
                     
-                } else {
+                } else if msg.starts_with("CMD:SEND_MESSAGE:") {
                     // Mensaje normal de chat
-                    println!("📤 Sending message: {}", msg);
+                    let msg_content = msg.strip_prefix("CMD:SEND_MESSAGE:").unwrap();
+                    let msg: Message = serde_json::from_str(msg_content).unwrap();
+                    let topic = gossipsub::IdentTopic::new(msg.topic.clone());
+                    println!("📤 Sending message: {} at {}", msg.msg, topic);
 
                     if let Err(e) = swarm.behaviour_mut()
                         .gossipsub
-                        .publish(topic.clone(), msg.as_bytes())
+                        .publish(topic, msg_content.as_bytes())
                     {
                         eprintln!("❌ Failed to publish: {}", e);
                     }
@@ -274,12 +293,20 @@ pub async fn start_p2p(
                     }
                 )) => {
                     let text = String::from_utf8_lossy(&message.data).to_string();
+                    let message_json = serde_json::from_str::<Message>(&text).unwrap_or(Message {
+                        peer_id: peer_id.to_string(),
+                        msg: text.clone(),
+                        topic: "unknown".to_string(),
+                        uuid: "".to_string(),
+                    });
+
                     println!("📥 Received from {}: {}", peer_id, text);
 
                     // Emitir al frontend con información del remitente
                     let msg_data = serde_json::json!({
                         "from": peer_id.to_string(),
-                        "content": text,
+                        "content": message_json.msg.to_string(),
+                        "topic": message_json.topic.to_string(),
                         "timestamp": chrono::Utc::now().to_rfc3339(),
                     });
                     

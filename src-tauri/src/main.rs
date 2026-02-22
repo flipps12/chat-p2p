@@ -8,14 +8,16 @@ use tokio::sync::mpsc;
 use tauri::Manager;
 use state::AppState;
 
+use crate::p2p::Message;
+
 /// Comando para enviar mensajes de chat
 #[tauri::command]
 async fn send_message(
-    msg: String,
+    msg: Message,
     state: tauri::State<'_, AppState>,
 ) -> Result<(), String> {
     state.p2p_sender
-        .send(msg)
+        .send(format!("CMD:SEND_MESSAGE:{}", serde_json::to_string(&msg).unwrap()))
         .await
         .map_err(|e| e.to_string())
 }

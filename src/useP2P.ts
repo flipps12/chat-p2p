@@ -6,7 +6,8 @@ import type {
   Peer, 
   MyInfo, 
   PeerDiscoveredPayload, 
-  MessagePayload 
+  MessagePayload, 
+  SendMessagePayload
 } from './types'
 
 export function useP2P() {
@@ -103,6 +104,7 @@ export function useP2P() {
             ...prev,
             {
               from: event.payload.from,
+              topic: event.payload.topic,
               content: event.payload.content,
               timestamp: event.payload.timestamp,
               own: false,
@@ -143,14 +145,15 @@ export function useP2P() {
     }
   }, [])
 
-  const sendMessage = async (content: string) => {
+  const sendMessage = async (payload: SendMessagePayload) => {
     try {
-      await invoke('send_message', { msg: content })
+      await invoke('send_message', { msg: payload })
       setMessages((prev) => [
         ...prev,
         {
           from: 'You',
-          content,
+          content: payload.msg,
+          topic: payload.topic,
           timestamp: new Date().toISOString(),
           own: true,
         },
