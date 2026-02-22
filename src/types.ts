@@ -6,6 +6,7 @@ export interface Message {
   content: string
   timestamp: string
   own: boolean
+  uuid: string
 }
 
 export interface SendMessagePayload {
@@ -38,6 +39,7 @@ export interface MessagePayload {
   content: string
   timestamp: string
   topic: string
+  uuid: string
 }
 
 export interface PeerSubscribedPayload {

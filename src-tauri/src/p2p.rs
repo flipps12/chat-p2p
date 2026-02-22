@@ -308,6 +308,7 @@ pub async fn start_p2p(
                         "content": message_json.msg.to_string(),
                         "topic": message_json.topic.to_string(),
                         "timestamp": chrono::Utc::now().to_rfc3339(),
+                        "uuid": message_json.uuid.to_string(),
                     });
                     
                     if let Err(e) = app.emit("p2p-message", msg_data) {

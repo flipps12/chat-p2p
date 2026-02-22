@@ -99,17 +99,30 @@ export function useP2P() {
       const unlistenMessage = await listen<MessagePayload>(
         'p2p-message',
         (event) => {
-          console.log('📥 Message received:', event.payload)
-          setMessages((prev) => [
-            ...prev,
-            {
-              from: event.payload.from,
-              topic: event.payload.topic,
-              content: event.payload.content,
-              timestamp: event.payload.timestamp,
-              own: false,
-            },
-          ])
+          const incoming = event.payload
+
+          setMessages((prev) => {
+            const alreadyExists = prev.some(
+              (m) => m.uuid === incoming.uuid
+            )
+
+            if (alreadyExists) {
+              console.log('⚠️ Duplicate message ignored:', incoming.uuid)
+              return prev
+            }
+
+            return [
+              ...prev,
+              {
+                from: incoming.from,
+                topic: incoming.topic,
+                content: incoming.content,
+                uuid: incoming.uuid,
+                timestamp: incoming.timestamp,
+                own: false,
+              },
+            ]
+          })
         }
       )
       unlisteners.push(unlistenMessage)
@@ -154,6 +167,7 @@ export function useP2P() {
           from: 'You',
           content: payload.msg,
           topic: payload.topic,
+          uuid: payload.uuid || crypto.randomUUID(),
           timestamp: new Date().toISOString(),
           own: true,
         },
