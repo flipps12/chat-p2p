@@ -149,7 +149,14 @@ pub async fn start_p2p(
                         peer_id: local_peer_id.to_string(),
                         addresses: local_addresses.clone(),
                     };
+                    // println!("📋 My info: {:?}", info);
                     let _ = app.emit("my-info", info);
+                    
+                } else if msg.starts_with("CMD:ADD_TOPIC:") {
+                    let topic = msg.strip_prefix("CMD:ADD_TOPIC:").unwrap();
+                    
+                    let topic_parsed = gossipsub::IdentTopic::new(topic);
+                    swarm.behaviour_mut().gossipsub.subscribe(&topic_parsed)?;
                     
                 } else {
                     // Mensaje normal de chat

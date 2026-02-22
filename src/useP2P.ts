@@ -21,13 +21,6 @@ export function useP2P() {
     let unlisteners: UnlistenFn[] = []
 
     const setupListeners = async () => {
-      // Obtener información inicial
-      try {
-        await invoke('get_my_info')
-      } catch (error) {
-        console.error('Failed to get my info:', error)
-      }
-
       // Mi información
       const unlistenMyAddress = await listen<MyInfo>('my-address', (event) => {
         console.log('🆔 My info:', event.payload)
@@ -133,6 +126,14 @@ export function useP2P() {
         setConnectionStatus(event.payload)
       })
       unlisteners.push(unlistenStatus)
+
+      // get my info
+
+      try {
+        await invoke('get_my_info')
+      } catch (error) {
+        console.error('Failed to get my info:', error)
+      }
     }
 
     setupListeners()

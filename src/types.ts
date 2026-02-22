@@ -8,6 +8,7 @@ export interface Message {
 }
 
 export interface Peer {
+  // name: string
   peer_id: string
   address: string
   status: 'discovered' | 'connected'

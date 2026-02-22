@@ -55,6 +55,17 @@ async fn get_my_info(
         .map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+async fn add_topic(
+    topic: String,
+    state: tauri::State<'_, AppState>,
+) -> Result<(), String> {
+    state.p2p_sender
+        .send(format!("CMD:ADD_TOPIC:{}", topic))
+        .await
+        .map_err(|e| e.to_string())
+}
+
 fn main() {
     tauri::Builder::default()
         .setup(|app| {
@@ -80,6 +91,7 @@ fn main() {
             connect_to_peer,
             get_connected_peers,
             get_my_info,
+            add_topic,
         ])
         .run(tauri::generate_context!())
         .expect("error running tauri");
