@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useP2P } from './useP2P'
 import UserList from './components/UserList'
+import ModalConnectPeer from './components/ModalConnectPeer'
 import type { Message, Peer, MyInfo } from './types'
 
 function App() {
@@ -16,10 +17,13 @@ function App() {
   } = useP2P()
 
   const [input, setInput] = useState('')
-  const [manualAddress, setManualAddress] = useState('')
-  const [showManualConnect, setShowManualConnect] = useState(false)
   const [channel, setChannel] = useState('general')
-  
+  const [showConnectModal, setShowConnectModal] = useState(false)
+  // encrypt
+  // add topic/channel
+  // list of topics
+
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -47,21 +51,6 @@ function App() {
     }
   }
 
-  const handleConnectManually = async () => {
-    if (!manualAddress.trim()) {
-      alert('Please enter an address')
-      return
-    }
-
-    try {
-      await connectToPeer(manualAddress)
-      setShowManualConnect(false)
-      setManualAddress('')
-    } catch (error) {
-      alert(`Error: ${error}`)
-    }
-  }
-
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
     setStatus('✅ Copied to clipboard!', 2000)
@@ -82,9 +71,14 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#030303] text-gray-100">
+      < ModalConnectPeer 
+        connectToPeer={connectToPeer}
+        setShowConnectModal={setShowConnectModal}
+        showConnectModal={showConnectModal}
+      />
       <div className="container mx-auto h-screen flex flex-row">
         <div className='flex flex-col flex-1 border-r border-neutral-800 bg-[#070709] min-w-0 overflow-hidden'>
-          <div className='w-full p-4 border-b border-neutral-700 flex flex-row'><h3 className='text-xl flex-1'>Channels</h3><button className='rounded-3xl p-1 hover:bg-neutral-900'><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button></div>
+          <div className='w-full p-4 border-b border-neutral-700 flex flex-row'><h3 className='text-xl flex-1'>Channels</h3><button onClick={ () => { setShowConnectModal(true) }} className='rounded-3xl p-1 hover:bg-neutral-900'><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button></div>
           <div className='w-full p-2'>
             <ul>
               <li onClick={ () => { setChannel('general') }} className='text-2xl flex flex-row px-3 py-2 text-neutral-400 hover:bg-neutral-800 focus:bg-neutral-800 rounded-xl' style={channel == "general" ? { backgroundColor: "#1a1a1a" } : {}}>#<div className='w-full min-w-0 overflow-hidden mx-2 text-xl'>{"general"}</div> <div className='text-xl'>{  }</div></li>
