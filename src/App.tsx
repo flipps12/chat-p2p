@@ -2,20 +2,21 @@ import { useState, useRef, useEffect } from 'react'
 import { useP2P } from './useP2P'
 import UserList from './components/UserList'
 import ModalConnectPeer from './components/ModalConnectPeer'
-import type { Message, Peer, MyInfo, Channel } from './types'
+import type { Channel } from './types'
 import ChannelsList from './components/ChannelsList'
 import ModalAddTopic from './components/ModalAddTopic'
+import ModalAddPeer from './components/ModalAddPeer'
 
 function App() {
   const {
     messages,
     peers,
     myInfo,
-    connectionStatus,
+    // connectionStatus,
     sendMessage,
     connectToPeer,
-    refreshPeers,
-    setStatus,
+    // refreshPeers,
+    // setStatus,
     add_topic,
   } = useP2P()
 
@@ -24,6 +25,7 @@ function App() {
   const [showConnectModal, setShowConnectModal] = useState(false)
   const [showAddTopic, setShowAddTopic] = useState(false)
   const [channels, setChannels] = useState<Channel[]>([])
+  const [showAddPeer, setShowAddPeer] = useState(false)
   // encrypt
   // add topic/channel
 
@@ -62,15 +64,15 @@ function App() {
     }
   }
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-    setStatus('✅ Copied to clipboard!', 2000)
-  }
+  // const copyToClipboard = (text: string) => {
+  //   navigator.clipboard.writeText(text)
+  //   setStatus('✅ Copied to clipboard!', 2000)
+  // }
 
-  const formatPeerId = (peerId: string): string => {
-    if (!peerId) return ''
-    return `${peerId.substring(0, 8)}...${peerId.substring(peerId.length - 6)}`
-  }
+  // const formatPeerId = (peerId: string): string => {
+  //   if (!peerId) return ''
+  //   return `${peerId.substring(0, 8)}...${peerId.substring(peerId.length - 6)}`
+  // }
 
   const formatTime = (timestamp: string): string => {
     const date = new Date(timestamp)
@@ -82,6 +84,11 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#030303] text-gray-100">
+      < ModalAddPeer
+        add_peer={connectToPeer}
+        setShowAddPeer={setShowAddPeer}
+        showAddPeer={showAddPeer}
+      />
       < ModalAddTopic
         add_topic={add_topic}
         setChannels={setChannels}
@@ -129,7 +136,7 @@ function App() {
           </div>
         </div>
         <div className='flex flex-col flex-1 bg-[#070709] min-w-0 overflow-hidden'>
-          <div className='w-full p-4 border-b border-neutral-700'><h3 className='text-xl '>Peers</h3></div>
+          <div className='w-full flex flex-row p-4 border-b border-neutral-700'><h3 className='text-xl flex-1'>Peers</h3><button onClick={ () => { setShowAddPeer(true) }} className='rounded-3xl p-1 hover:bg-neutral-900'><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button></div>
           <div className='w-full p-2'>
             <UserList myInfo={myInfo} peers={peers} />
           </div>
