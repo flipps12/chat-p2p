@@ -196,6 +196,15 @@ export function useP2P() {
     }
   }
 
+  const add_topic = async (topic: string) => {
+    try {
+      await invoke('add_topic', { topic })
+    } catch (error) {
+      console.error('❌ Failed to add topic:', error)
+      throw error
+    }
+  }
+
   const setStatus = (status: string, duration = 3000) => {
     setConnectionStatus(status)
     if (duration > 0) {
@@ -212,5 +221,6 @@ export function useP2P() {
     connectToPeer,
     refreshPeers,
     setStatus,
+    add_topic,
   }
 }

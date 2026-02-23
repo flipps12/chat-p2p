@@ -2,7 +2,9 @@ import { useState, useRef, useEffect } from 'react'
 import { useP2P } from './useP2P'
 import UserList from './components/UserList'
 import ModalConnectPeer from './components/ModalConnectPeer'
-import type { Message, Peer, MyInfo } from './types'
+import type { Message, Peer, MyInfo, Channel } from './types'
+import ChannelsList from './components/ChannelsList'
+import ModalAddTopic from './components/ModalAddTopic'
 
 function App() {
   const {
@@ -14,14 +16,23 @@ function App() {
     connectToPeer,
     refreshPeers,
     setStatus,
+    add_topic,
   } = useP2P()
 
   const [input, setInput] = useState('')
   const [channel, setChannel] = useState('general')
   const [showConnectModal, setShowConnectModal] = useState(false)
+  const [showAddTopic, setShowAddTopic] = useState(false)
+  const [channels, setChannels] = useState<Channel[]>([])
   // encrypt
   // add topic/channel
-  // list of topics
+
+  // debug 
+  // setChannels([
+  //   { name: 'general', unreadCount: 0, uuid: crypto.randomUUID() },
+  //   { name: 'pruebas', unreadCount: 2, uuid: crypto.randomUUID() },
+  //   { name: 'test-net', unreadCount: 0, uuid: crypto.randomUUID() },
+  // ])
 
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -71,6 +82,13 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#030303] text-gray-100">
+      < ModalAddTopic
+        add_topic={add_topic}
+        setChannels={setChannels}
+        channels={channels}
+        setShowAddTopic={setShowAddTopic}
+        showAddTopic={showAddTopic}
+      />
       < ModalConnectPeer 
         connectToPeer={connectToPeer}
         setShowConnectModal={setShowConnectModal}
@@ -78,18 +96,15 @@ function App() {
       />
       <div className="container mx-auto h-screen flex flex-row">
         <div className='flex flex-col flex-1 border-r border-neutral-800 bg-[#070709] min-w-0 overflow-hidden'>
-          <div className='w-full p-4 border-b border-neutral-700 flex flex-row'><h3 className='text-xl flex-1'>Channels</h3><button onClick={ () => { setShowConnectModal(true) }} className='rounded-3xl p-1 hover:bg-neutral-900'><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button></div>
+          <div className='w-full p-4 border-b border-neutral-700 flex flex-row'><h3 className='text-xl flex-1'>Channels</h3><button onClick={ () => { setShowAddTopic(true) }} className='rounded-3xl p-1 hover:bg-neutral-900'><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button></div>
           <div className='w-full p-2'>
-            <ul>
-              <li onClick={ () => { setChannel('general') }} className='text-2xl flex flex-row px-3 py-2 text-neutral-400 hover:bg-neutral-800 focus:bg-neutral-800 rounded-xl' style={channel == "general" ? { backgroundColor: "#1a1a1a" } : {}}>#<div className='w-full min-w-0 overflow-hidden mx-2 text-xl'>{"general"}</div> <div className='text-xl'>{  }</div></li>
-              <li onClick={ () => { setChannel('pruebas') }} className='text-2xl flex flex-row px-3 py-2 text-neutral-400 hover:bg-neutral-800 focus:bg-neutral-800 rounded-xl' style={channel == "pruebas" ? { backgroundColor: "#1a1a1a" } : {}}>#<div className='w-full min-w-0 overflow-hidden mx-2 text-xl'>{"pruebas"}</div> <div className='text-xl'>{  }</div></li>
-              <li onClick={ () => { setChannel('test-net') }} className='text-2xl flex flex-row px-3 py-2 text-neutral-400 hover:bg-neutral-800 focus:bg-neutral-800 rounded-xl' style={channel == "test-net" ? { backgroundColor: "#1a1a1a" } : {}}>#<div className='w-full min-w-0 overflow-hidden mx-2 text-xl'>{"test-net"}</div> <div className='text-xl'>{  }</div></li>
-            </ul>
+            <ChannelsList channels={channels} setChannel={setChannel} channel={channel} />
           </div>
         </div>
         <div className='flex flex-col flex-3 border-r border-neutral-800'>
           <div className='w-full p-4 border-b border-neutral-700'><h3 className='text-xl '>Messages</h3></div>
           <div className='flex-1 overflow-y-auto px-2 pt-2'>
+            <div className='text-gray-500 text-center'>{channel}</div>
             {messages
               .filter((message) => message.topic === channel)
               .map((message, index) => (

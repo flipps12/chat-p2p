@@ -1,5 +1,16 @@
 // Types para la aplicación P2P Chat
 
+export interface Channel {
+  name: string
+  unreadCount: number
+  uuid: string
+}
+
+export interface CreateChannelPayload {
+  name: string
+  uuid: string
+}
+
 export interface Message {
   topic: string
   from: string
