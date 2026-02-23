@@ -75,7 +75,7 @@ function ModalAddTopic(functions: ModalAddTopicProps) {
     <div
       className={
         functions.showAddTopic
-          ? "fixed inset-0 transition-opacity bg-black bg-opacity-50 flex items-center justify-center z-50"
+          ? "fixed inset-0 transition-opacity bg-black opacity-70 flex items-center justify-center z-50"
           : "hidden"
       }
       onClick={handleCancel} // Cerrar al hacer click fuera
