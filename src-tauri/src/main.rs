@@ -3,12 +3,13 @@
 
 mod p2p;
 mod state;
+mod types;
 
 use tokio::sync::mpsc;
 use tauri::Manager;
 use state::AppState;
 
-use crate::p2p::Message;
+use crate::types::Message;
 
 /// Comando para enviar mensajes de chat
 #[tauri::command]

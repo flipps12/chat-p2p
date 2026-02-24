@@ -1,10 +1,9 @@
 use libp2p::{
     gossipsub, mdns, noise,
-    swarm::{NetworkBehaviour, SwarmEvent},
+    swarm::SwarmEvent,
     tcp, yamux, PeerId, Multiaddr,
     multiaddr::Protocol,
 };
-use serde::{Serialize, Deserialize};
 use std::{
     collections::hash_map::DefaultHasher,
     error::Error,
@@ -15,40 +14,13 @@ use tokio::{select, sync::mpsc};
 use futures::StreamExt;
 use tauri::{AppHandle, Emitter};
 
-#[derive(NetworkBehaviour)]
-struct MyBehaviour {
-    gossipsub: gossipsub::Behaviour,
-    mdns: mdns::tokio::Behaviour,
-}
-
-// Estructuras para eventos del frontend
-#[derive(Serialize, Clone, Debug)]
-struct PeerDiscovered {
-    peer_id: String,
-    address: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Message {
-    peer_id: String,
-    msg: String,
-    topic: String,
-    uuid: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct SendMessagePayload {
-    peer_id: String,
-    content: String,
-    topic: String,
-    uuid: String,
-}
-
-#[derive(Serialize, Clone, Debug)]
-struct MyAddressInfo {
-    peer_id: String,
-    addresses: Vec<String>,
-}
+use crate::types::{
+    Message, 
+    MyBehaviour,
+    MyBehaviourEvent,
+    MyAddressInfo, 
+    PeerDiscovered
+};
 
 async fn connect_to_peer(addr: Multiaddr, swarm: &mut libp2p::Swarm<MyBehaviour>) -> Result<(), Box<dyn Error>> {
     match swarm.dial(addr.clone()) {
