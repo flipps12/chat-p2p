@@ -647,6 +647,7 @@ dependencies = [
 name = "chat-p2p"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "chrono",
  "futures",
  "libp2p",

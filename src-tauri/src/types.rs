@@ -58,5 +58,5 @@ pub struct PeerIdToSave {
 pub struct ChannelInfoToSave {
     pub topic: String,
     pub uuid: String,
-    // last_message_timestamp: Option<String>,
+    pub last_message_uuid: Option<String>,
 }

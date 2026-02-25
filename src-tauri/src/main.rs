@@ -4,6 +4,7 @@
 mod p2p;
 mod state;
 mod types;
+mod fs;
 
 use tokio::sync::mpsc;
 use tauri::Manager;
