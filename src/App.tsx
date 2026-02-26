@@ -21,7 +21,7 @@ function App() {
   } = useP2P()
 
   const [input, setInput] = useState('')
-  const [channel, setChannel] = useState('general')
+  const [channel, setChannel] = useState('')
   // const [showConnectModal, setShowConnectModal] = useState(false)
   const [showAddTopic, setShowAddTopic] = useState(false)
   const [channels, setChannels] = useState<Channel[]>([])
