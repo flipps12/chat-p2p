@@ -6,7 +6,7 @@ mod state;
 mod types;
 mod fs;
 
-use tokio::sync::{mpsc,Mutex};
+use tokio::sync::{mpsc, Mutex};
 use std::sync::Arc;
 use tauri::{Manager, State};
 
@@ -182,8 +182,15 @@ fn main() {
 
 
             // Spawn P2P worker en background
+            let file_manager_clone = file_manager.clone();
             tauri::async_runtime::spawn(async move {
-                if let Err(e) = p2p::start_p2p(rx, app_handle).await {
+                if let Err(e) = p2p::start_p2p(
+                    rx, 
+                    app_handle,
+                    file_manager_clone,
+                    known_peers,
+                    channels,
+                ).await {
                     eprintln!("❌ P2P error: {}", e);
                 }
             });

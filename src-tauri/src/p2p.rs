@@ -5,21 +5,27 @@ use libp2p::{
     multiaddr::Protocol,
 };
 use std::{
+    sync::Arc,
     collections::hash_map::DefaultHasher,
     error::Error,
     hash::{Hash, Hasher},
     time::Duration,
 };
-use tokio::{select, sync::mpsc};
+use tokio::{select, sync::{mpsc, Mutex}};
 use futures::StreamExt;
 use tauri::{AppHandle, Emitter};
 
+use crate::fs::FileManager;
 use crate::types::{
     Message, 
     MyBehaviour,
     MyBehaviourEvent,
     MyAddressInfo, 
-    PeerDiscovered
+    PeerDiscovered,
+    // Info to save
+    PeerInfoToSave,
+    ChannelInfoToSave,
+    PeerIdToSave,
 };
 
 async fn connect_to_peer(addr: Multiaddr, swarm: &mut libp2p::Swarm<MyBehaviour>) -> Result<(), Box<dyn Error>> {
@@ -40,7 +46,22 @@ async fn connect_to_peer(addr: Multiaddr, swarm: &mut libp2p::Swarm<MyBehaviour>
 pub async fn start_p2p(
     mut rx: mpsc::Receiver<String>,
     app: AppHandle,
+    file_manager: Arc<Mutex<FileManager>>,
+    known_peers: Vec<PeerInfoToSave>,
+    channels: Vec<ChannelInfoToSave>,
 ) -> Result<(), Box<dyn Error>> {
+    // reading saved peer_id
+    let saved_peer_id = file_manager.lock().await.load_peer_identity()?;
+
+    for peer in &known_peers {
+        println!("📋 Known peer: {} at {:?}", peer.peer_id, peer.addresses);
+    }
+
+    // reading saved channels    
+    for channel in &channels {
+        println!("📋 Saved channel: {} with last message {}", channel.topic, channel.last_message_uuid.as_deref().unwrap_or("None"));
+    }
+
     println!("🚀 Starting P2P network...");
 
     let mut swarm = libp2p::SwarmBuilder::with_new_identity()
@@ -200,6 +221,34 @@ pub async fn start_p2p(
                         address: clean_addr.to_string(),
                     };
                     let _ = app.emit("peer-connected", peer_info);
+
+                    // ✅ Guardar peer
+                    let peer_info = PeerInfoToSave {
+                        peer_id: peer_id.to_string(),
+                        addresses: vec![endpoint.get_remote_address().to_string()],
+                        failed_attempts: 0,
+                    };
+                    
+                    let fm = file_manager.lock().await;
+                    if let Err(e) = fm.add_or_update_peer(peer_info) {
+                        eprintln!("Failed to save peer: {}", e);
+                    }
+                    
+                    // ✅ Resetear intentos fallidos
+                    if let Err(e) = fm.reset_peer_failed_attempts(&peer_id.to_string()) {
+                        eprintln!("Failed to reset attempts: {}", e);
+                    }
+                }
+
+                // Cuando falla una conexión
+                SwarmEvent::OutgoingConnectionError { peer_id: Some(peer_id), .. } => {
+                    println!("❌ Connection failed to: {}", peer_id);
+                    
+                    // ✅ Incrementar intentos fallidos
+                    let fm = file_manager.lock().await;
+                    if let Err(e) = fm.increment_peer_failed_attempts(&peer_id.to_string()) {
+                        eprintln!("Failed to increment attempts: {}", e);
+                    }
                 }
 
                 // Conexión cerrada
@@ -285,6 +334,16 @@ pub async fn start_p2p(
                     
                     if let Err(e) = app.emit("p2p-message", msg_data) {
                         eprintln!("❌ Failed to emit to frontend: {}", e);
+                    }
+
+                    // save last message uuid for the topic
+                    let topic_id = message.topic.to_string();
+                    
+                    // ✅ Actualizar último mensaje del canal
+                    let message_uuid = uuid::Uuid::new_v4().to_string();
+                    let fm = file_manager.lock().await;
+                    if let Err(e) = fm.update_channel_last_message(&topic_id, message_uuid) {
+                        eprintln!("Failed to update channel: {}", e);
                     }
                 }
 

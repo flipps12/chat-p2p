@@ -658,6 +658,7 @@ dependencies = [
  "tauri-plugin-opener",
  "tokio",
  "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]
