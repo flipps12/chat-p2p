@@ -7,6 +7,7 @@ interface ModalAddTopicProps {
   add_topic: (payload: string) => Promise<void>;
   setChannels: (channels: Channel[]) => void;
   setShowAddTopic: (show: boolean) => void;
+  saveChannel: (topic: string, uuid: string) => Promise<void>;
   channels: Channel[];
   showAddTopic: boolean;
 }
@@ -43,12 +44,20 @@ function ModalAddTopic(functions: ModalAddTopicProps) {
     functions.setChannels([
       ...functions.channels,
       {
-        name: topicName.trim(),
+        topic: topicName.trim(),
         unreadCount: 0,
         uuid: finalUuid,
       },
     ]);
-
+    
+    try {
+      // save
+      await functions.saveChannel(topicName.trim(), finalUuid);
+    } catch (error) {
+      console.error("Failed to save channel:", error);
+      alert("Failed to save channel. Please try again.");
+      return;
+    }
     // Llamar al backend para suscribirse al topic
     try {
       await functions.add_topic(finalUuid);
@@ -124,7 +133,7 @@ function ModalAddTopic(functions: ModalAddTopicProps) {
             className="w-full p-3 rounded bg-[#303030] text-white focus:outline-none focus:ring-2 focus:ring-purple-600"
             value={topicName}
             onChange={(e) => setTopicName(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSubmit()}
+            // onKeyPress={(e) => e.key === "Enter" && handleSubmit()}
           />
         </div>
 

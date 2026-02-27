@@ -1,7 +1,7 @@
 // Types para la aplicación P2P Chat
 
 export interface Channel {
-  name: string
+  topic: string
   unreadCount: number
   uuid: string
 }
@@ -58,12 +58,33 @@ export interface PeerSubscribedPayload {
   topic: string
 }
 
+// save data 
+
+export interface PeerInfoToSave {
+  peer_id: string
+  addresses: string[]
+  failed_attempts: number
+}
+
+export interface ChannelInfoToSave {
+  topic: string
+  uuid: string
+  last_message_uuid: string | null
+}
+
+export interface PeerIdToSave {
+  peer_id_private: string
+  peer_id_public: string
+}
+
 // Tauri Commands
 export type TauriCommand = 
   | 'send_message'
   | 'connect_to_peer'
   | 'get_connected_peers'
   | 'get_my_info'
+  | 'add_channel'
+  | 'get_channels'
 
 // Tauri Events
 export type TauriEvent =

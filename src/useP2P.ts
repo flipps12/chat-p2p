@@ -7,7 +7,8 @@ import type {
   MyInfo, 
   PeerDiscoveredPayload, 
   MessagePayload, 
-  SendMessagePayload
+  SendMessagePayload,
+  Channel
 } from './types'
 
 export function useP2P() {
@@ -15,6 +16,7 @@ export function useP2P() {
   const [peers, setPeers] = useState<Peer[]>([])
   const [myInfo, setMyInfo] = useState<MyInfo | null>(null)
   const [connectionStatus, setConnectionStatus] = useState('')
+  const [channels, setChannels] = useState<Channel[]>([])
 
   useEffect(() => {
     console.log('🎧 Setting up P2P listeners...')
@@ -212,15 +214,52 @@ export function useP2P() {
     }
   }
 
+  // save data
+  const saveChannel = async (topic: string, uuid: string) => {
+    try {
+      console.log('💾 Saving channel:', {
+        topic: topic,
+        uuid: uuid
+      })
+      await invoke('add_channel', { topic, uuid }) // CON await
+      console.log('✅ Channel saved successfully')
+    } catch (error) {
+      console.error('❌ Failed to save channel:', error)
+      throw error
+    }
+  }
+
+  // load data
+  const loadChannels = async () => {
+    try {
+      const savedChannels: Channel[] = await invoke('get_channels')
+      console.log('📂 Loaded channels:', savedChannels)
+      setChannels(savedChannels)
+      for (const ch of savedChannels) {
+        await add_topic(ch.uuid)
+      }
+    } catch (error) {
+      console.error('❌ Failed to load channels:', error)
+    }
+  }
+
   return {
     messages,
     peers,
     myInfo,
     connectionStatus,
+    // load data
+    channels,
     sendMessage,
     connectToPeer,
     refreshPeers,
     setStatus,
     add_topic,
+    // save data
+    saveChannel,
+    // load data
+    loadChannels,
+    // support function to add channels
+    setChannels,
   }
 }

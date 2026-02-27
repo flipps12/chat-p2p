@@ -12,19 +12,27 @@ function App() {
     messages,
     peers,
     myInfo,
+    channels,
     // connectionStatus,
     sendMessage,
     connectToPeer,
     // refreshPeers,
     // setStatus,
+    loadChannels,
     add_topic,
+    saveChannel,
+    setChannels,
   } = useP2P()
+
+  // load 
+  useEffect(() => {
+    loadChannels()
+  }, [])
 
   const [input, setInput] = useState('')
   const [channel, setChannel] = useState('')
   // const [showConnectModal, setShowConnectModal] = useState(false)
   const [showAddTopic, setShowAddTopic] = useState(false)
-  const [channels, setChannels] = useState<Channel[]>([])
   const [showAddPeer, setShowAddPeer] = useState(false)
   const [filteredMessages, setFilteredMessages] = useState(messages)
   // encrypt
@@ -100,6 +108,7 @@ function App() {
       < ModalAddTopic
         add_topic={add_topic}
         setChannels={setChannels}
+        saveChannel={saveChannel}
         channels={channels}
         setShowAddTopic={setShowAddTopic}
         showAddTopic={showAddTopic}
