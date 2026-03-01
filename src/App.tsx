@@ -35,6 +35,7 @@ function App() {
   const [showAddTopic, setShowAddTopic] = useState(false)
   const [showAddPeer, setShowAddPeer] = useState(false)
   const [filteredMessages, setFilteredMessages] = useState(messages)
+  const [personalName, setPersonalName] = useState('Flipps123')
   // encrypt
   // add topic/channel
 
@@ -62,6 +63,7 @@ function App() {
 
     try {
       await sendMessage({
+        name: personalName || 'Unknown',
         msg: input,
         topic: channel,
         peer_id: myInfo?.peer_id || '',
@@ -133,7 +135,7 @@ function App() {
                   {!sameOwner && (
                     <div className="flex flex-col text-sm">
                       <div className='flex flex-row items-center'>
-                        <div className='text-gray-300 overflow-x-hidden mr-2 text-lg'>{message.from}</div>
+                        <div className='text-gray-300 overflow-x-hidden mr-2 text-lg'>{message.own == true ? message.from : message.name}</div>
                         <div className='text-gray-500 flex-1 text-right text-nowrap'>{formatTime(message.timestamp)}</div>
                       </div>
                       <div className="text-sm flex-1 text-gray-400">{message.content}</div>
@@ -167,7 +169,7 @@ function App() {
         <div className='flex flex-col flex-1 bg-[#070709] min-w-0 overflow-x-hidden custom-scroll'>
           <div className='w-full flex flex-row p-4 border-b border-neutral-700'><h3 className='text-xl flex-1'>Peers</h3><button onClick={ () => { setShowAddPeer(true) }} className='rounded-3xl p-1 hover:bg-neutral-900'><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button></div>
           <div className='w-full p-2'>
-            <UserList myInfo={myInfo} peers={peers} />
+            <UserList myInfo={myInfo} peers={peers} name={personalName}/>
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { MyInfo, Peer } from '../types';
 interface UserListProps {
     peers?: Peer[];
     myInfo: MyInfo | null;
+    name: string;
 }
 
 interface UserItemProps {
@@ -10,11 +11,11 @@ interface UserItemProps {
     peer: string;
 }
 
-function UserList({ myInfo, peers }: UserListProps) {
+function UserList({ myInfo, peers, name }: UserListProps) {
     let myPeer = myInfo?.peer_id;
     return (
     <ul>
-        <UserItem name={"Flipps"} peer={myPeer || 'No peer detected'} />
+        <UserItem name={name || "Unknown"} peer={myPeer || 'No peer detected'} />
         {peers?.map((peer) => (
             <UserItem key={peer.peer_id} name={"Unknown"} peer={peer?.peer_id || 'No peer detected'} />
         ))}

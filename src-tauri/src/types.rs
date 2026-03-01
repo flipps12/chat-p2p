@@ -20,6 +20,7 @@ pub struct PeerDiscovered {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Message {
+    pub name: String,
     pub peer_id: String,
     pub msg: String,
     pub topic: String,

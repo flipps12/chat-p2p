@@ -101,8 +101,8 @@ pub async fn start_p2p(
         })?
         .build();
 
-    let topic = gossipsub::IdentTopic::new("test-net");
-    swarm.behaviour_mut().gossipsub.subscribe(&topic)?;
+    // let topic = gossipsub::IdentTopic::new("test-net");
+    // swarm.behaviour_mut().gossipsub.subscribe(&topic)?;
 
     // Guardar el peer_id local
     let local_peer_id = *swarm.local_peer_id();
@@ -307,43 +307,58 @@ pub async fn start_p2p(
 
                 // Mensaje recibido via Gossipsub
                 SwarmEvent::Behaviour(MyBehaviourEvent::Gossipsub(
-                    gossipsub::Event::Message { 
-                        propagation_source: peer_id,
-                        message, 
-                        .. 
+                    gossipsub::Event::Message {
+                        propagation_source,
+                        message,
+                        ..
                     }
                 )) => {
-                    let text = String::from_utf8_lossy(&message.data).to_string();
-                    let message_json = serde_json::from_str::<Message>(&text).unwrap_or(Message {
-                        peer_id: peer_id.to_string(),
-                        msg: text.clone(),
-                        topic: "unknown".to_string(),
-                        uuid: "".to_string(),
-                    });
+                    let topic_hash = message.topic.clone();
+                    let topic_id = topic_hash.to_string();
 
-                    println!("📥 Received from {}: {}", peer_id, text);
+                    // Intentar parsear como UTF-8
+                    let text = match String::from_utf8(message.data.clone()) {
+                        Ok(t) => t,
+                        Err(e) => {
+                            eprintln!("❌ Invalid UTF-8 message: {}", e);
+                            return Ok(());
+                        }
+                    };
 
-                    // Emitir al frontend con información del remitente
+                    // Intentar deserializar
+                    let message_json: Message = match serde_json::from_str(&text) {
+                        Ok(m) => m,
+                        Err(e) => {
+                            eprintln!("❌ Invalid JSON message: {}", e);
+                            return Ok(());
+                        }
+                    };
+
+                    println!(
+                        "📥 Received from {} on topic {}: {}",
+                        propagation_source,
+                        topic_id,
+                        message_json.msg
+                    );
+
+                    // Construir payload para frontend
                     let msg_data = serde_json::json!({
-                        "from": peer_id.to_string(),
-                        "content": message_json.msg.to_string(),
-                        "topic": message_json.topic.to_string(),
+                        "from": propagation_source.to_string(),
+                        "content": message_json.msg,
+                        "name": message_json.name,
+                        "topic": topic_id,
                         "timestamp": chrono::Utc::now().to_rfc3339(),
-                        "uuid": message_json.uuid.to_string(),
+                        "uuid": message_json.uuid,
                     });
-                    
+
                     if let Err(e) = app.emit("p2p-message", msg_data) {
                         eprintln!("❌ Failed to emit to frontend: {}", e);
                     }
 
-                    // save last message uuid for the topic
-                    let topic_id = message.topic.to_string();
-                    
-                    // ✅ Actualizar último mensaje del canal
-                    let message_uuid = uuid::Uuid::new_v4().to_string();
+                    // ✅ Usar el UUID REAL del mensaje, no generar uno nuevo
                     let fm = file_manager.lock().await;
-                    if let Err(e) = fm.update_channel_last_message(&topic_id, message_uuid) {
-                        eprintln!("Failed to update channel: {}", e);
+                    if let Err(e) = fm.update_channel_last_message(&topic_id, message_json.uuid) {
+                        eprintln!("❌ Failed to update channel: {}", e);
                     }
                 }
 

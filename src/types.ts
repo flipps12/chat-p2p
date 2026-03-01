@@ -12,6 +12,7 @@ export interface CreateChannelPayload {
 }
 
 export interface Message {
+  name: string
   topic: string
   from: string
   content: string
@@ -21,6 +22,7 @@ export interface Message {
 }
 
 export interface SendMessagePayload {
+  name: string
   msg: string,
   topic: string,
   peer_id: string,
@@ -46,6 +48,7 @@ export interface PeerDiscoveredPayload {
 }
 
 export interface MessagePayload {
+  name: string
   from: string
   content: string
   timestamp: string

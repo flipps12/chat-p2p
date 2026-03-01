@@ -116,6 +116,7 @@ export function useP2P() {
             return [
               ...prev,
               {
+                name: incoming.name,
                 from: incoming.from,
                 topic: incoming.topic,
                 content: incoming.content,
@@ -167,6 +168,7 @@ export function useP2P() {
         ...prev,
         {
           from: 'You',
+          name: payload.name,
           content: payload.msg,
           topic: payload.topic,
           uuid: payload.uuid || crypto.randomUUID(),
