@@ -5,7 +5,8 @@ members = [
     "crates/p2p-core",
     "crates/p2p-discovery",
     "crates/p2p-application",
-    "app", "crates/p2p-discovery", "crates/p2p-nat",
+    "app", 
+    "crates/p2p-nat",
 ]
 
 [workspace.package]

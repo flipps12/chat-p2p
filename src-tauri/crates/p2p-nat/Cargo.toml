@@ -5,3 +5,6 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
+anyhow.workspace = true
+p2p-core = { path = "../p2p-core" }
+tokio.workspace = true
