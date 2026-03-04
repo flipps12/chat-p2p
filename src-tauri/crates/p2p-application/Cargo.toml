@@ -1,0 +1,11 @@
+[package]
+name = "p2p-application"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+libp2p.workspace = true
+tokio.workspace = true
+anyhow.workspace = true
+serde.workspace = true

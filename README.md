@@ -890,5 +890,3 @@ pub fn emit_audio_frame(
 - **Perfect Forward Secrecy**: Sí
 
 ---
-
-¿Quieres que profundice en alguna capa específica o empecemos a implementar algún módulo? 🚀

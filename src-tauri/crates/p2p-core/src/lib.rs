@@ -5,9 +5,17 @@ use tokio::{
 };
 use std::{net::SocketAddr, sync::Arc};
 
+#[derive(Debug, Clone)]
+pub enum CoreEvent {
+    Message {
+        data: Vec<u8>,
+        from: SocketAddr,
+    }
+}
+
 pub struct Core {
-    incoming: mpsc::Receiver<(Vec<u8>, SocketAddr)>,
     tx: mpsc::Sender<(Vec<u8>, SocketAddr)>,
+    event_rx: mpsc::Receiver<CoreEvent>,
 }
 
 impl Core {
@@ -15,7 +23,7 @@ impl Core {
         let socket = Arc::new(UdpSocket::bind(address).await?);
 
         let (tx, mut rx) = mpsc::channel::<(Vec<u8>, SocketAddr)>(100);
-        let (incoming_tx, incoming_rx) = mpsc::channel::<(Vec<u8>, SocketAddr)>(100);
+        let (event_tx, event_rx) = mpsc::channel::<CoreEvent>(100);
 
         let sock_clone = socket.clone();
 
@@ -25,12 +33,20 @@ impl Core {
             loop {
                 tokio::select! {
                     Some((data, addr)) = rx.recv() => {
-                        let _ = sock_clone.send_to(&data, addr).await;
+                        if let Err(e) = sock_clone.send_to(&data, addr).await {
+                            eprintln!("send error: {:?}", e);
+                        }
                     }
 
                     Ok((len, addr)) = sock_clone.recv_from(&mut buf) => {
                         let data = buf[..len].to_vec();
-                        let _ = incoming_tx.send((data, addr)).await;
+
+                        let event = CoreEvent::Message {
+                            data,
+                            from: addr,
+                        };
+
+                        let _ = event_tx.send(event).await;
                     }
                 }
             }
@@ -38,7 +54,7 @@ impl Core {
 
         Ok(Self {
             tx,
-            incoming: incoming_rx,
+            event_rx,
         })
     }
 
@@ -47,8 +63,8 @@ impl Core {
         Ok(())
     }
 
-    pub async fn recv(&mut self) -> Option<(Vec<u8>, SocketAddr)> {
-        self.incoming.recv().await
+    pub async fn next_event(&mut self) -> Option<CoreEvent> {
+        self.event_rx.recv().await
     }
 }
 
@@ -58,23 +74,22 @@ mod tests {
     use tokio::time::{sleep, Duration};
 
     #[tokio::test]
-    async fn test_two_nodes_udp() -> Result<()> {
+    async fn test_two_nodes_udp_event() -> Result<()> {
         let addr1: SocketAddr = "127.0.0.1:9001".parse()?;
         let addr2: SocketAddr = "127.0.0.1:9002".parse()?;
 
         let node1 = Core::bind(addr1).await?;
         let mut node2 = Core::bind(addr2).await?;
 
-        // pequeña espera para asegurar que ambos sockets están listos
         sleep(Duration::from_millis(100)).await;
 
-        node1.send(b"hola nodo2".to_vec(), addr2).await?;
+        node1.send(b"hola evento".to_vec(), addr2).await?;
 
-        if let Some((data, from)) = node2.recv().await {
-            assert_eq!(data, b"hola nodo2".to_vec());
+        if let Some(CoreEvent::Message { data, from }) = node2.next_event().await {
+            assert_eq!(data, b"hola evento".to_vec());
             assert_eq!(from, addr1);
         } else {
-            panic!("node2 did not receive message");
+            panic!("No event received");
         }
 
         Ok(())
