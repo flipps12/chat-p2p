@@ -4218,6 +4218,8 @@ dependencies = [
 name = "p2p-discovery"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "p2p-core",
  "reqwest",
  "serde",
  "serde_json",

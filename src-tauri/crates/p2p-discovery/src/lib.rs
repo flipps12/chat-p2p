@@ -1,5 +1,9 @@
-use reqwest::{Client, Error};
 use serde::{Serialize, Deserialize};
+use std::net::SocketAddr;
+use reqwest::Client;
+use anyhow::{Result, anyhow};
+
+use p2p_core::Core;
 
 struct Discovery {
     discovered_peers: Vec<String>,
@@ -29,7 +33,7 @@ impl Discovery {
         &self.discovered_peers
     }
 
-    async fn discover_peers_by_nametag(&mut self, nametag: &str) -> Result<(), Error> {
+    async fn discover_peers_by_nametag(&mut self, nametag: &str) -> Result<()> {
         // send nametag to the network and discover peers
         let response = self.client
             .get("http://localhost:3000/discover")
@@ -47,7 +51,7 @@ impl Discovery {
         Ok(())
     }
 
-    async fn public_peer_id_nametag(&self, nametag: &str, peer_id: &str) -> Result<(), Error> {
+    async fn public_peer_id_nametag(&self, nametag: &str, peer_id: &str) -> Result<()> {
         let response = self.client
             .post("http://localhost:3000/public")
             .json(&PublicPeerInfo {
@@ -62,6 +66,16 @@ impl Discovery {
         println!("{}", response);
         Ok(())
     }
+
+    async fn get_my_address(&self, core: &mut Core, addr: SocketAddr) -> Result<String> {
+        core.send(vec![0], addr).await?;
+        // Get the local address of the core
+        if let Some(p2p_core::CoreEvent::Message { from, .. }) = core.next_event().await {
+            Ok(from.to_string())
+        } else {
+            Err(anyhow!("Failed to get address"))
+        }
+    }
 }
 
 #[cfg(test)]
@@ -70,8 +84,9 @@ mod tests {
     // use tokio::time::{sleep, Duration};
 
     #[tokio::test]
-    async fn test_public_peer() -> Result<(), Error> {
+    async fn test_public_peer() -> Result<()> {
         let mut discovery = Discovery::new();
+        let mut core = Core::bind("127.0.0.1:5006".parse().unwrap()).await?;
 
         discovery
             .public_peer_id_nametag("test_nametag", "test_peer_id")
@@ -79,6 +94,10 @@ mod tests {
 
         discovery
             .discover_peers_by_nametag("test_nametag")
+            .await?;
+
+        discovery
+            .get_my_address(&mut core, "127.0.0.1:5005".parse().unwrap())
             .await?;
 
         Ok(())
