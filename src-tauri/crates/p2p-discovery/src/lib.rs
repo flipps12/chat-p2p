@@ -33,6 +33,7 @@ impl Discovery {
         &self.discovered_peers
     }
 
+    // usar udp Socket y devolver address - peerid
     async fn discover_peers_by_nametag(&mut self, nametag: &str) -> Result<()> {
         // send nametag to the network and discover peers
         let response = self.client
@@ -51,6 +52,7 @@ impl Discovery {
         Ok(())
     }
 
+    // mudar a udp socket
     async fn public_peer_id_nametag(&self, nametag: &str, peer_id: &str) -> Result<()> {
         let response = self.client
             .post("http://localhost:3000/public")
@@ -88,14 +90,18 @@ mod tests {
         let mut discovery = Discovery::new();
         let mut core = Core::bind("127.0.0.1:5006".parse().unwrap()).await?;
 
+
+        // register nametag with peerid
         discovery
             .public_peer_id_nametag("test_nametag", "test_peer_id")
             .await?;
 
+        // send nametag and get peerid - address
         discovery
             .discover_peers_by_nametag("test_nametag")
             .await?;
 
+        // discover ADDR:PORT of nat
         discovery
             .get_my_address(&mut core, "127.0.0.1:5005".parse().unwrap())
             .await?;
