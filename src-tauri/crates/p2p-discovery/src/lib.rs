@@ -1,5 +1,6 @@
 use serde::{Serialize, Deserialize};
 use std::net::SocketAddr;
+use std::collections::HashMap;
 use reqwest::Client;
 use anyhow::{Result, anyhow};
 
@@ -34,6 +35,7 @@ struct GetPeerIdBody {
 struct Discovery {
     discovered_peers: Vec<String>,
     client: Client,
+    packet_hashmap: HashMap, // guardar paquetes con Id para verificar integridad, tiempo limite
 }
 
 impl Discovery {
