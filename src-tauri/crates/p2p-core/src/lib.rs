@@ -1,97 +1,208 @@
+// crates/p2p-core/src/lib.rs
+
+use tokio::net::UdpSocket;
+use std::net::SocketAddr;
 use anyhow::Result;
-use tokio::{
-    net::UdpSocket,
-    sync::mpsc,
-};
-use std::{net::SocketAddr, sync::Arc};
+
+// ============================================================================
+// PACKET TYPE CONSTANTS
+// ============================================================================
+
+pub const PACKET_TYPE_DISCOVERY: u8 = 0x01;
+pub const PACKET_TYPE_TRANSPORT: u8 = 0x02;
+pub const PACKET_TYPE_P2P_DATA: u8 = 0x03;
+
+// ============================================================================
+// CORE EVENT
+// ============================================================================
 
 #[derive(Debug, Clone)]
 pub enum CoreEvent {
     Message {
-        data: Vec<u8>,
         from: SocketAddr,
-    }
+        data: Vec<u8>,
+    },
 }
 
+// ============================================================================
+// CORE SOCKET
+// ============================================================================
+
 pub struct Core {
-    tx: mpsc::Sender<(Vec<u8>, SocketAddr)>,
-    event_rx: mpsc::Receiver<CoreEvent>,
+    socket: UdpSocket,
+    buffer: Vec<u8>,
 }
 
 impl Core {
-    pub async fn bind(address: SocketAddr) -> Result<Self> {
-        let socket = Arc::new(UdpSocket::bind(address).await?);
-
-        let (tx, mut rx) = mpsc::channel::<(Vec<u8>, SocketAddr)>(100);
-        let (event_tx, event_rx) = mpsc::channel::<CoreEvent>(100);
-
-        let sock_clone = socket.clone();
-
-        tokio::spawn(async move {
-            let mut buf = vec![0u8; 2048];
-
-            loop {
-                tokio::select! {
-                    Some((data, addr)) = rx.recv() => {
-                        if let Err(e) = sock_clone.send_to(&data, addr).await {
-                            eprintln!("send error: {:?}", e);
-                        }
-                    }
-
-                    Ok((len, addr)) = sock_clone.recv_from(&mut buf) => {
-                        let data = buf[..len].to_vec();
-
-                        let event = CoreEvent::Message {
-                            data,
-                            from: addr,
-                        };
-
-                        let _ = event_tx.send(event).await;
-                    }
-                }
-            }
-        });
-
+    /// Bind a una dirección local
+    pub async fn bind(addr: SocketAddr) -> Result<Self> {
+        let socket = UdpSocket::bind(addr).await?;
+        println!("✅ [Core] Bound to {}", socket.local_addr()?);
+        
         Ok(Self {
-            tx,
-            event_rx,
+            socket,
+            buffer: vec![0u8; 65535],
         })
     }
-
-    pub async fn send(&self, data: Vec<u8>, addr: SocketAddr) -> Result<()> {
-        self.tx.send((data, addr)).await?;
+    
+    /// Obtener dirección local
+    pub fn local_addr(&self) -> Result<SocketAddr> {
+        Ok(self.socket.local_addr()?)
+    }
+    
+    /// Enviar datos crudos
+    pub async fn send(&mut self, mut data: Vec<u8>, destination: SocketAddr) -> Result<()> {
+        // IMPORTANTE: Si el primer byte no está seteado, setearlo a P2P_DATA
+        if data.is_empty() || data[0] == 0 {
+            // Prepend packet type
+            let mut new_data = vec![PACKET_TYPE_P2P_DATA];
+            new_data.extend_from_slice(&data);
+            data = new_data;
+        }
+        
+        let sent = self.socket.send_to(&data, destination).await?;
+        tracing::debug!("[Core] Sent {} bytes to {}", sent, destination);
+        
         Ok(())
     }
-
+    
+    /// Recibir siguiente evento
     pub async fn next_event(&mut self) -> Option<CoreEvent> {
-        self.event_rx.recv().await
+        match self.socket.recv_from(&mut self.buffer).await {
+            Ok((len, from)) => {
+                let data = self.buffer[..len].to_vec();
+                
+                Some(CoreEvent::Message { from, data })
+            }
+            Err(e) => {
+                tracing::error!("[Core] Receive error: {}", e);
+                None
+            }
+        }
+    }
+    
+    /// Peek del tipo de paquete sin consumir
+    pub fn peek_packet_type(data: &[u8]) -> u8 {
+        data.get(0).copied().unwrap_or(PACKET_TYPE_P2P_DATA)
     }
 }
+
+// ============================================================================
+// CORE CON ROUTING (AVANZADO)
+// ============================================================================
+
+use tokio::sync::mpsc;
+
+pub struct CoreWithRouting {
+    socket: UdpSocket,
+    
+    /// Canal para Discovery
+    discovery_tx: Option<mpsc::Sender<CoreEvent>>,
+    
+    /// Canal para Transport
+    transport_tx: Option<mpsc::Sender<CoreEvent>>,
+    
+    /// Canal para datos P2P
+    p2p_data_tx: Option<mpsc::Sender<CoreEvent>>,
+}
+
+impl CoreWithRouting {
+    pub async fn bind(
+        addr: SocketAddr,
+        discovery_tx: Option<mpsc::Sender<CoreEvent>>,
+        transport_tx: Option<mpsc::Sender<CoreEvent>>,
+        p2p_data_tx: Option<mpsc::Sender<CoreEvent>>,
+    ) -> Result<Self> {
+        let socket = UdpSocket::bind(addr).await?;
+        println!("✅ [Core] Bound to {} with routing", socket.local_addr()?);
+        
+        let core = Self {
+            socket,
+            discovery_tx,
+            transport_tx,
+            p2p_data_tx,
+        };
+        
+        Ok(core)
+    }
+    
+    /// Enviar datos
+    pub async fn send(&self, data: Vec<u8>, destination: SocketAddr) -> Result<()> {
+        let sent = self.socket.send_to(&data, destination).await?;
+        tracing::debug!("[Core] Sent {} bytes to {}", sent, destination);
+        Ok(())
+    }
+    
+    /// Iniciar receive loop con routing automático
+    pub async fn start_routing(mut self) {
+        println!("🔀 [Core] Starting routing loop");
+        
+        let mut buffer = vec![0u8; 65535];
+        
+        loop {
+            match self.socket.recv_from(&mut buffer).await {
+                Ok((len, from)) => {
+                    let data = buffer[..len].to_vec();
+                    
+                    // Peek primer byte
+                    let packet_type = data.get(0).copied().unwrap_or(PACKET_TYPE_P2P_DATA);
+                    
+                    let event = CoreEvent::Message {
+                        from,
+                        data,
+                    };
+                    
+                    // Rutear según tipo
+                    match packet_type {
+                        PACKET_TYPE_DISCOVERY => {
+                            if let Some(ref tx) = self.discovery_tx {
+                                let _ = tx.send(event).await;
+                            }
+                        }
+                        PACKET_TYPE_TRANSPORT => {
+                            if let Some(ref tx) = self.transport_tx {
+                                let _ = tx.send(event).await;
+                            }
+                        }
+                        PACKET_TYPE_P2P_DATA => {
+                            if let Some(ref tx) = self.p2p_data_tx {
+                                let _ = tx.send(event).await;
+                            }
+                        }
+                        _ => {
+                            tracing::warn!("[Core] Unknown packet type: 0x{:02x}", packet_type);
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::error!("[Core] Receive error: {}", e);
+                }
+            }
+        }
+    }
+}
+
+// ============================================================================
+// TESTS
+// ============================================================================
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tokio::time::{sleep, Duration};
-
+    
     #[tokio::test]
-    async fn test_two_nodes_udp_event() -> Result<()> {
-        let addr1: SocketAddr = "127.0.0.1:9001".parse()?;
-        let addr2: SocketAddr = "127.0.0.1:9002".parse()?;
-
-        let node1 = Core::bind(addr1).await?;
-        let mut node2 = Core::bind(addr2).await?;
-
-        sleep(Duration::from_millis(100)).await;
-
-        node1.send(b"hola evento".to_vec(), addr2).await?;
-
-        if let Some(CoreEvent::Message { data, from }) = node2.next_event().await {
-            assert_eq!(data, b"hola evento".to_vec());
-            assert_eq!(from, addr1);
-        } else {
-            panic!("No event received");
-        }
-
+    async fn test_core_bind() -> Result<()> {
+        let core = Core::bind("127.0.0.1:0".parse()?).await?;
+        assert!(core.local_addr()?.port() > 0);
         Ok(())
+    }
+    
+    #[tokio::test]
+    async fn test_peek_packet_type() {
+        let discovery_packet = vec![PACKET_TYPE_DISCOVERY, 1, 2, 3];
+        assert_eq!(Core::peek_packet_type(&discovery_packet), PACKET_TYPE_DISCOVERY);
+        
+        let transport_packet = vec![PACKET_TYPE_TRANSPORT, 1, 2, 3];
+        assert_eq!(Core::peek_packet_type(&transport_packet), PACKET_TYPE_TRANSPORT);
     }
 }

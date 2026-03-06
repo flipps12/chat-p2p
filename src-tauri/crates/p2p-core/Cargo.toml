@@ -9,3 +9,4 @@ libp2p.workspace = true
 tokio.workspace = true
 anyhow.workspace = true
 serde.workspace = true
+tracing = "0.1.44"
