@@ -5,15 +5,35 @@ use anyhow::{Result, anyhow};
 
 use p2p_core::Core;
 
+// json
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct Publish {
+    header: String,
+    body: PublishBody
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct PublishBody {
+    nametag: String,
+    peerid: String
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct GetPeerId {
+    header: String,
+    body: GetPeerIdBody
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct GetPeerIdBody {
+    nametag: String
+}
+
+// Object
+
 struct Discovery {
     discovered_peers: Vec<String>,
     client: Client,
-}
-
-#[derive(Serialize, Deserialize)]
-struct PublicPeerInfo {
-    nametag: String,
-    peer_id: String,
 }
 
 impl Discovery {
@@ -34,39 +54,46 @@ impl Discovery {
     }
 
     // usar udp Socket y devolver address - peerid
-    async fn discover_peers_by_nametag(&mut self, nametag: &str) -> Result<()> {
-        // send nametag to the network and discover peers
-        let response = self.client
-            .get("http://localhost:3000/discover")
-            .query(&[
-                ("nametag", nametag),
-            ])
-            .send()
-            .await?
-            .text()
-            .await?;
-
-        println!("{}", response);
-        self.discover(&response);
+    async fn discover_peers_by_nametag(&mut self, core: &mut Core, addr: SocketAddr, nametag: &str) -> Result<()> {
+        let message = GetPeerId {
+            header: "getpeerid".to_string(),
+            body: GetPeerIdBody {
+                nametag: nametag.to_string(),
+            },
+        };
         
-        Ok(())
+        let json = serde_json::to_vec(&message)?;
+
+        core.send(json, addr).await?;
+
+        if let Some(p2p_core::CoreEvent::Message { from, .. }) = core.next_event().await {
+            self.discover(&from.to_string());
+            Ok(())
+        } else {
+            Err(anyhow!("Failed to get address"))
+        }
     }
 
     // mudar a udp socket
-    async fn public_peer_id_nametag(&self, nametag: &str, peer_id: &str) -> Result<()> {
-        let response = self.client
-            .post("http://localhost:3000/public")
-            .json(&PublicPeerInfo {
+    async fn publish_peer_id_nametag(&self, core: &mut Core, addr: SocketAddr, nametag: &str, peer_id: &str) -> Result<()> {
+        let message = Publish {
+            header: "publish".to_string(),
+            body: PublishBody {
                 nametag: nametag.to_string(),
-                peer_id: peer_id.to_string(),
-            })
-            .send()
-            .await?
-            .text()
-            .await?;
+                peerid: peer_id.to_string(),
+            },
+        };
+        
+        let json = serde_json::to_vec(&message)?;
 
-        println!("{}", response);
-        Ok(())
+        core.send(json, addr).await?;
+
+        if let Some(p2p_core::CoreEvent::Message { from, .. }) = core.next_event().await {
+            // resolve status
+            Ok(())
+        } else {
+            Err(anyhow!("Failed to publish peerid"))
+        }
     }
 
     async fn get_my_address(&self, core: &mut Core, addr: SocketAddr) -> Result<String> {
@@ -93,12 +120,12 @@ mod tests {
 
         // register nametag with peerid
         discovery
-            .public_peer_id_nametag("test_nametag", "test_peer_id")
+            .publish_peer_id_nametag(&mut core, "127.0.0.1:5005".parse().unwrap(), "test_nametag", "test_peer_id")
             .await?;
 
         // send nametag and get peerid - address
         discovery
-            .discover_peers_by_nametag("test_nametag")
+            .discover_peers_by_nametag(&mut core, "127.0.0.1:5005".parse().unwrap(), "test_nametag")
             .await?;
 
         // discover ADDR:PORT of nat
