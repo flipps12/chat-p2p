@@ -6,5 +6,10 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
+async-trait = "0.1.89"
+p2p-transport = { path = "../p2p-transport" }
 p2p-core = { path = "../p2p-core" }
+rand = "0.10.0"
+serde.workspace = true
 tokio.workspace = true
+wincode = { version = "0.4.5", features = ["derive"] }
