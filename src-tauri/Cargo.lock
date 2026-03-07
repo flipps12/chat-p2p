@@ -4243,6 +4243,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "p2p-core",
+ "p2p-nat",
  "p2p-transport",
  "reqwest",
  "serde",
