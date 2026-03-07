@@ -683,7 +683,10 @@ name = "chat-p2p"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "p2p-application",
+ "p2p-core",
+ "p2p-discovery",
+ "p2p-nat",
+ "p2p-transport",
  "serde",
  "serde_json",
  "tauri",
@@ -4213,16 +4216,6 @@ dependencies = [
  "elliptic-curve",
  "primeorder",
  "sha2",
-]
-
-[[package]]
-name = "p2p-application"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "libp2p",
- "serde",
- "tokio",
 ]
 
 [[package]]

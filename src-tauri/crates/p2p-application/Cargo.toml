@@ -9,3 +9,6 @@ libp2p.workspace = true
 tokio.workspace = true
 anyhow.workspace = true
 serde.workspace = true
+tauri.workspace = true
+tauri-build.workspace = true
+tauri-plugin-opener.workspace = true

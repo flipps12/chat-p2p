@@ -17,4 +17,7 @@ serde_json.workspace = true
 anyhow.workspace = true
 
 # módulos internos
-p2p-application = { path = "../crates/p2p-application" }
+p2p-core = { path = "../crates/p2p-core" }
+p2p-nat = { path = "../crates/p2p-nat" }
+p2p-discovery = { path = "../crates/p2p-discovery" }
+p2p-transport = { path = "../crates/p2p-transport" }
