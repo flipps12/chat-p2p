@@ -64,32 +64,42 @@ function App() {
 
   return (
     <main className="w-screen h-screen bg-black text-white flex flex-col">
-      <h1 className="h-[8%] text-white font-bold text-3xl p-4 border-b border-white">Knot-chat</h1>
-      <div className="h-[5%] flex items-center gap-3">
-        <input onChange={(e) => setPeerid(e.currentTarget.value)} placeholder="PeerId" type="text"
-          className="px-3 h-full outline-0 border-b flex-1 text-xl" />
+	<h1 className="text-white font-bold text-3xl p-4 border-b border-white">Knot-chat</h1>
+		<div className="flex items-center">
+        	<input onChange={(e) => setPeerid(e.currentTarget.value)} placeholder="PeerId" type="text"
+          	className="px-3 h-full outline-0 border-b flex-1 text-xl" />
       </div>
-      <div className="flex-1 py-4 px-2">
-        <ul>
+      <div className="flex-1 flex flex-row">
+	  <div className="flex-2 flex border-r">
+	  	<div className="flex-1">Peerid</div>
+	  </div>
+		<div className="flex-6 flex flex-col">
+	  	<div className="flex-1 p-3">
+        		<ul>
+	  <li>Message</li>
           {messageList.map((mess, i) => (
             <li key={i}>{mess}</li>
           ))}
-        </ul>
-      </div>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          sendMessage();
-        }}
-        className="h-[7%] px-3">
-        <div className="p-2 px-2 bg-mist-900 rounded-2xl flex flex-row text-white">
+        		</ul>
+	  	</div>
+      
+      		<form
+        	onSubmit={(e) => {
+          		e.preventDefault();
+          		sendMessage();
+        	}}
+		className="p-3">
+        <div className="p-2 bg-mist-900 rounded-2xl flex flex-row text-white">
           <input type="text" className="ml-2 w-full h-12 outline-0" placeholder="Message"
             onChange={(e) => setMessage(e.currentTarget.value)}
             value={message}
           />
-          <button type="submit" className="h-12 outline-0 bg-mist-950 px-6 rounded-2xl">Send</button>
-        </div>
-      </form>
+          		<button type="submit" className="h-12 outline-0 bg-mist-950 px-6 rounded-2xl">Send</button>
+          
+    			</div>
+      		</form>
+	  	</div>
+	  </div>
     </main>
     // <main className="container">
     //   <h1>Knot Chat Terminal</h1>
