@@ -8,6 +8,7 @@ function App() {
   const [command, setCommand] = useState("status");
   const [arg, setArg] = useState("");
   const [message, setMessage] = useState("");
+  const [messageList, setList] = useState("");
   const [rtt, setRtt] = useState(null);
 
   // Configuramos los listeners al montar el componente
@@ -22,8 +23,9 @@ function App() {
       });
 
       // Escucha el RTT de los pings
-      unlistenRtt = await listen("knot-rtt", (event) => {
-        setRtt(event.payload);
+      unlistenRtt = await listen("message", (event) => {
+        console.log(event.payload);
+        setMessagelist(event.payload);
       });
     }
 
@@ -63,7 +65,7 @@ function App() {
   return (
     <main className="w-screen h-screen bg-mist-950 text-white">
       <h1 className="h-[8%] text-white font-bold text-3xl p-4 border-b border-white">Knot-chat</h1>
-      <div className="h-[85%]"></div>
+      <div className="h-[85%]">{ messageList }</div>
       <form
         onSubmit={(e) => {
           e.preventDefault();

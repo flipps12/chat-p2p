@@ -49,8 +49,7 @@ async fn send_message_command(
 
     println!("Message: '{message}' to peerid: '{peerid}'");
 
-    let _ = client
-        .send_bytes(&peerid, message.as_bytes(), 2000).await;
+    let _ = client.send_bytes(&peerid, message.as_bytes(), 2000).await;
     Ok(())
 }
 
@@ -123,10 +122,7 @@ async fn start_knot_listeners(app_handle: tauri::AppHandle, knot: KnotClient) {
     let h2 = app_handle.clone();
     tokio::spawn(async move {
         while let Ok(msg) = byte_rx.recv().await {
-            if let Ok(sent) = timing::parse_timestamp(&msg) {
-                let rtt = timing::diff_ms(sent);
-                h2.emit("knot-rtt", rtt).unwrap();
-            }
+            h2.emit("message", msg.to_string()).unwrap();
         }
     });
 }
