@@ -8,7 +8,8 @@ function App() {
   const [command, setCommand] = useState("status");
   const [arg, setArg] = useState("");
   const [message, setMessage] = useState("");
-  const [messageList, setList] = useState("");
+  const [messageList, setMessageList] = useState("");
+  const [peerid, setPeerid] = useState("");
   const [rtt, setRtt] = useState(null);
 
   // Configuramos los listeners al montar el componente
@@ -25,7 +26,7 @@ function App() {
       // Escucha el RTT de los pings
       unlistenRtt = await listen("message", (event) => {
         console.log(event.payload);
-        setMessagelist(event.payload);
+        setMessageList(event.payload);
       });
     }
 
@@ -55,7 +56,7 @@ function App() {
     try {
       await invoke("send_message_command", {
         message: message,
-        peerid: "12D3KooWDAbyBVCGWh3v1AhAjRHbEwJ79URs6KUeZKHHDnikFXt6"
+        peerid: peerid
       });
     } catch (error) {
       console.error("Error en Knot:", error);
@@ -65,7 +66,10 @@ function App() {
   return (
     <main className="w-screen h-screen bg-mist-950 text-white">
       <h1 className="h-[8%] text-white font-bold text-3xl p-4 border-b border-white">Knot-chat</h1>
-      <div className="h-[85%]">{ messageList }</div>
+      <div className="h-[5%] flex items-center gap-3">
+        <input onChange={(e) => setPeerid(e.currentTarget.value)} placeholder="PeerId" type="text" className="px-3 h-full outline-0 border-b flex-1 text-xl" />
+      </div>
+      <div className="h-[82%]">{messageList}</div>
       <form
         onSubmit={(e) => {
           e.preventDefault();
