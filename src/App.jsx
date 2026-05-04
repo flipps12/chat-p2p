@@ -7,6 +7,7 @@ function App() {
   const [responses, setResponses] = useState([]);
   const [command, setCommand] = useState("status");
   const [arg, setArg] = useState("");
+  const [message, setMessage] = useState("");
   const [rtt, setRtt] = useState(null);
 
   // Configuramos los listeners al montar el componente
@@ -48,6 +49,17 @@ function App() {
     }
   }
 
+  async function sendMessage() {
+    try {
+      await invoke("send_message_command", {
+        message: message,
+        peerid: "12D3KooWDAbyBVCGWh3v1AhAjRHbEwJ79URs6KUeZKHHDnikFXt6"
+      });
+    } catch (error) {
+      console.error("Error en Knot:", error);
+    }
+  }
+
   return (
     <main className="w-screen h-screen bg-mist-950 text-white">
       <h1 className="h-[8%] text-white font-bold text-3xl p-4 border-b border-white">Knot-chat</h1>
@@ -55,11 +67,14 @@ function App() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          sendCommand();
+          sendMessage();
         }}
         className="h-[7%]">
         <div className="p-2 px-4 bg-mist-900 rounded-2xl flex flex-row text-white">
-          <input type="text" className="w-full h-12 outline-0" placeholder="Message" />
+          <input type="text" className="w-full h-12 outline-0" placeholder="Message"
+            onChange={(e) => setMessage(e.currentTarget.value)}
+            value={message}
+          />
           <button type="submit" className="h-12 outline-0">Send</button>
         </div>
       </form>
