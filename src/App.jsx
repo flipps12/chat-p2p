@@ -8,14 +8,14 @@ function App() {
   const [command, setCommand] = useState("status");
   const [arg, setArg] = useState("");
   const [message, setMessage] = useState("");
-  const [messageList, setMessageList] = useState("");
+  const [messageList, setMessageList] = useState([]);
   const [peerid, setPeerid] = useState("");
   const [rtt, setRtt] = useState(null);
 
   // Configuramos los listeners al montar el componente
   useEffect(() => {
     let unlistenResponse;
-    let unlistenRtt;
+    let unlistenByte;
 
     async function setupListeners() {
       // Escucha respuestas de la red Knot
@@ -24,9 +24,8 @@ function App() {
       });
 
       // Escucha el RTT de los pings
-      unlistenRtt = await listen("message", (event) => {
-        console.log(event.payload);
-        setMessageList(event.payload);
+      unlistenByte = await listen("message", (event) => {
+        setMessageList((prev) => [...prev, event.payload]);
       });
     }
 
@@ -35,7 +34,7 @@ function App() {
     // Limpieza al desmontar
     return () => {
       if (unlistenResponse) unlistenResponse();
-      if (unlistenRtt) unlistenRtt();
+      if (unlistenByte) unlistenByte();
     };
   }, []);
 
@@ -64,24 +63,31 @@ function App() {
   }
 
   return (
-    <main className="w-screen h-screen bg-mist-950 text-white">
+    <main className="w-screen h-screen bg-black text-white flex flex-col">
       <h1 className="h-[8%] text-white font-bold text-3xl p-4 border-b border-white">Knot-chat</h1>
       <div className="h-[5%] flex items-center gap-3">
-        <input onChange={(e) => setPeerid(e.currentTarget.value)} placeholder="PeerId" type="text" className="px-3 h-full outline-0 border-b flex-1 text-xl" />
+        <input onChange={(e) => setPeerid(e.currentTarget.value)} placeholder="PeerId" type="text"
+          className="px-3 h-full outline-0 border-b flex-1 text-xl" />
       </div>
-      <div className="h-[82%]">{messageList}</div>
+      <div className="flex-1 py-4 px-2">
+        <ul>
+          {messageList.map((mess, i) => (
+            <li key={i}>{mess}</li>
+          ))}
+        </ul>
+      </div>
       <form
         onSubmit={(e) => {
           e.preventDefault();
           sendMessage();
         }}
-        className="h-[7%]">
-        <div className="p-2 px-4 bg-mist-900 rounded-2xl flex flex-row text-white">
-          <input type="text" className="w-full h-12 outline-0" placeholder="Message"
+        className="h-[7%] px-3">
+        <div className="p-2 px-2 bg-mist-900 rounded-2xl flex flex-row text-white">
+          <input type="text" className="ml-2 w-full h-12 outline-0" placeholder="Message"
             onChange={(e) => setMessage(e.currentTarget.value)}
             value={message}
           />
-          <button type="submit" className="h-12 outline-0">Send</button>
+          <button type="submit" className="h-12 outline-0 bg-mist-950 px-6 rounded-2xl">Send</button>
         </div>
       </form>
     </main>
