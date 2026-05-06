@@ -3,8 +3,23 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
 
+const cleanPeers = (rawText) => {
+  // 1. Extraemos todos los PeerIds usando Regex
+  // Busca el patrón 12D3Koo... que es el estándar de libp2p
+  const peerIdRegex = /12D3Koo[a-zA-Z0-9]{45}/g;
+  const matches = rawText.match(peerIdRegex);
+
+  if (!matches) return [];
+
+  // 2. Eliminamos duplicados usando un Set
+  const uniquePeers = [...new Set(matches)];
+
+  return uniquePeers;
+};
+
 function App() {
   const [responses, setResponses] = useState([]);
+  const [peers, setPeers] = useState([]);
   const [command, setCommand] = useState("status");
   const [arg, setArg] = useState("");
   const [message, setMessage] = useState("");
@@ -20,7 +35,16 @@ function App() {
     async function setupListeners() {
       // Escucha respuestas de la red Knot
       unlistenResponse = await listen("knot-response", (event) => {
-        setResponses((prev) => [JSON.stringify(event.payload), ...prev].slice(0, 10));
+        // setResponses((prev) =>
+        //   [JSON.stringify(event.payload), ...prev].slice(0, 10),
+        // );
+        console.log(event.payload);
+        switch (event.payload.command) {
+          case "getpeers":
+            setPeers(cleanPeers(event.payload.response));
+            console.log(peers);
+            break;
+        }
       });
 
       // Escucha el RTT de los pings
@@ -38,12 +62,12 @@ function App() {
     };
   }, []);
 
-  async function sendCommand() {
+  async function sendCommand(command, args) {
     try {
       // Llamamos al comando unificado en Rust
       await invoke("send_knot_command", {
-        command: command,
-        args: arg ? [arg] : []
+        command,
+        args: args,
       });
     } catch (error) {
       console.error("Error en Knot:", error);
@@ -55,7 +79,7 @@ function App() {
     try {
       await invoke("send_message_command", {
         message: message,
-        peerid: peerid
+        peerid: peerid,
       });
     } catch (error) {
       console.error("Error en Knot:", error);
@@ -64,42 +88,75 @@ function App() {
 
   return (
     <main className="w-screen h-screen bg-black text-white flex flex-col">
-	<h1 className="text-white font-bold text-3xl p-4 border-b border-white">Knot-chat</h1>
-		<div className="flex items-center">
-        	<input onChange={(e) => setPeerid(e.currentTarget.value)} placeholder="PeerId" type="text"
-          	className="px-3 h-full outline-0 border-b flex-1 text-xl" />
-      </div>
+      <h1 className="text-white font-bold text-3xl p-4 border-b border-white">
+        Knot-chat
+      </h1>
+
       <div className="flex-1 flex flex-row">
-	  <div className="flex-2 flex border-r">
-	  	<div className="flex-1">Peerid</div>
-	  </div>
-		<div className="flex-6 flex flex-col">
-	  	<div className="flex-1 p-3">
-        		<ul>
-	  <li>Message</li>
-          {messageList.map((mess, i) => (
-            <li key={i}>{mess}</li>
-          ))}
-        		</ul>
-	  	</div>
-      
-      		<form
-        	onSubmit={(e) => {
-          		e.preventDefault();
-          		sendMessage();
-        	}}
-		className="p-3">
-        <div className="p-2 bg-mist-900 rounded-2xl flex flex-row text-white">
-          <input type="text" className="ml-2 w-full h-12 outline-0" placeholder="Message"
-            onChange={(e) => setMessage(e.currentTarget.value)}
-            value={message}
-          />
-          		<button type="submit" className="h-12 outline-0 bg-mist-950 px-6 rounded-2xl">Send</button>
-          
-    			</div>
-      		</form>
-	  	</div>
-	  </div>
+        <aside className="flex-2 flex border-r flex-col overflow-hidden">
+          <div className="flex flex-row p-2">
+            <div className="flex-1 py-2"> Peers: </div>
+            <button
+              onClick={() => {
+                sendCommand("getpeers", []);
+              }}
+              className="bg-mist-900 px-3.5 py-2  rounded-full hover:bg-mist-700 transition-colors"
+            >
+              R
+            </button>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <ul className="overflow-hidden">
+              {peers.map((peer, i) => (
+                <li
+                  onClick={() => {
+                    setPeerid(peer);
+                  }}
+                  className="m-2 overflow-x-hidden"
+                  key={i}
+                >
+                  {peer}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
+
+        <div className="flex-6 flex flex-col">
+          <div className="flex-1 p-3">
+            <ul>
+              <li>Message</li>
+              {messageList.map((mess, i) => (
+                <li key={i}>{mess}</li>
+              ))}
+            </ul>
+          </div>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              sendMessage();
+            }}
+            className="p-3"
+          >
+            <div className="p-2 bg-mist-900 rounded-2xl flex flex-row text-white">
+              <input
+                type="text"
+                className="ml-2 w-full h-12 outline-0"
+                placeholder="Message"
+                onChange={(e) => setMessage(e.currentTarget.value)}
+                value={message}
+              />
+              <button
+                type="submit"
+                className="h-12 outline-0 bg-mist-950 px-6 rounded-2xl"
+              >
+                Send
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </main>
     // <main className="container">
     //   <h1>Knot Chat Terminal</h1>
