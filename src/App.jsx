@@ -25,6 +25,7 @@ function App() {
   const [message, setMessage] = useState("");
   const [messageList, setMessageList] = useState([]);
   const [peerid, setPeerid] = useState("");
+  const [localPeerid, setLocalPeerid] = useState([]);
   const [rtt, setRtt] = useState(null);
 
   // Configuramos los listeners al montar el componente
@@ -43,6 +44,10 @@ function App() {
           case "getpeers":
             setPeers(cleanPeers(event.payload.response));
             console.log(peers);
+            break;
+          case "getpeerid":
+            setLocalPeerid(cleanPeers(event.payload.response));
+            console.log(localPeerid);
             break;
         }
       });
@@ -88,42 +93,53 @@ function App() {
 
   return (
     <main className="w-screen h-screen bg-black text-white flex flex-col">
-      <h1 className="text-white font-bold text-3xl p-4 border-b border-white">
-        Knot-chat
-      </h1>
+      {/* <h1 className="text-white font-bold text-3xl p-4">Knot-chat</h1>*/}
 
       <div className="flex-1 flex flex-row">
-        <aside className="flex-2 flex border-r flex-col overflow-hidden">
-          <div className="flex flex-row p-2">
-            <div className="flex-1 py-2"> Peers: </div>
+        <aside className="flex-2 flex bg-mist-950 rounded-r-2xl flex-col overflow-hidden">
+          <div className="flex flex-row p-2 border-b border-mist-800">
+            <div className="flex-1 py-2">Peers</div>
             <button
               onClick={() => {
                 sendCommand("getpeers", []);
+                sendCommand("getpeerid", []);
               }}
               className="bg-mist-900 px-3.5 py-2  rounded-full hover:bg-mist-700 transition-colors"
             >
               R
             </button>
           </div>
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden mt-2">
             <ul className="overflow-hidden">
+              <li
+                className="m-1 p-2 overflow-x-hidden bg-mist-900 rounded-md"
+                onClick={() => {
+                  navigator.clipboard.writeText(localPeerid);
+                }}
+              >
+                {localPeerid}
+              </li>
+              <hr className="my-3 text-mist-800"></hr>
               {peers.map((peer, i) => (
-                <li
-                  onClick={() => {
-                    setPeerid(peer);
-                  }}
-                  className="m-2 overflow-x-hidden"
-                  key={i}
-                >
-                  {peer}
-                </li>
+                <>
+                  <li
+                    onClick={() => {
+                      setPeerid(peer);
+                    }}
+                    className="m-1 p-2 bg-mist-800 rounded-md overflow-x-hidden text-mist-200"
+                    key={i}
+                  >
+                    {peer}
+                  </li>
+                </>
               ))}
             </ul>
           </div>
         </aside>
 
         <div className="flex-6 flex flex-col">
-          <div className="flex-1 p-3">
+          <h1 className="border-b border-mist-800 text-xl p-3.5">Knot</h1>
+          <div className="flex-1 p-3 mt-2">
             <ul>
               <li>Message</li>
               {messageList.map((mess, i) => (
@@ -139,7 +155,7 @@ function App() {
             }}
             className="p-3"
           >
-            <div className="p-2 bg-mist-900 rounded-2xl flex flex-row text-white">
+            <div className="p-2 bg-mist-950 rounded-2xl flex flex-row text-white">
               <input
                 type="text"
                 className="ml-2 w-full h-12 outline-0"
@@ -149,7 +165,7 @@ function App() {
               />
               <button
                 type="submit"
-                className="h-12 outline-0 bg-mist-950 px-6 rounded-2xl"
+                className="h-12 outline-0 bg-mist-950 border border-mist-800 px-6 rounded-xl hover:bg-mist-900"
               >
                 Send
               </button>

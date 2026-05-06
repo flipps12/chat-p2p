@@ -29,6 +29,7 @@ async fn send_knot_command(
             multiaddr: args[0].clone(),
         },
         "getpeers" => KnotCommand::GetPeers,
+        "getpeerid" => KnotCommand::GetPeerId,
         "ping" => {
             let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
             let text = now.as_nanos().to_string();
@@ -128,13 +129,10 @@ async fn start_knot_listeners(app_handle: tauri::AppHandle, knot: KnotClient) {
     let h = app_handle.clone();
     tokio::spawn(async move {
         while let Ok(msg) = msg_rx.recv().await {
-            h.emit("knot-response", msg).unwrap();
-            // if let Some(ref response) = msg.response {
-            //     // println!("{response}");
-            //     if !response.is_null() {
-            //         // Emitimos al frontend
-            //     }
-            // }
+            h.emit("knot-response", &msg).unwrap();
+            if let Some(ref response) = msg.response {
+                println!("{response}");
+            }
         }
     });
 
