@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
+import SideBar from "./SideBar";
+import AddPeer from "./AddPeer";
 
 const cleanPeers = (rawText) => {
   // 1. Extraemos todos los PeerIds usando Regex
@@ -18,15 +20,15 @@ const cleanPeers = (rawText) => {
 };
 
 function App() {
+  // overlays
+  const [addPeerOverlay, setAddPeerOverlay] = useState(false);
+
   const [responses, setResponses] = useState([]);
   const [peers, setPeers] = useState([]);
-  const [command, setCommand] = useState("status");
-  const [arg, setArg] = useState("");
   const [message, setMessage] = useState("");
   const [messageList, setMessageList] = useState([]);
   const [peerid, setPeerid] = useState("");
   const [localPeerid, setLocalPeerid] = useState([]);
-  const [rtt, setRtt] = useState(null);
 
   // Configuramos los listeners al montar el componente
   useEffect(() => {
@@ -86,7 +88,7 @@ function App() {
         message: message,
         peerid: peerid,
       });
-setMessageList((prev) => [...prev, message]);	
+      setMessageList((prev) => [...prev, message]);
     } catch (error) {
       console.error("Error en Knot:", error);
     }
@@ -96,50 +98,33 @@ setMessageList((prev) => [...prev, message]);
     <main className="w-screen h-screen bg-black text-white flex flex-col">
       {/* <h1 className="text-white font-bold text-3xl p-4">Knot-chat</h1>*/}
 
+      {addPeerOverlay ? (
+        <AddPeer setAddPeerOverlay={setAddPeerOverlay} />
+      ) : (
+        <></>
+      )}
+
       <div className="flex-1 flex flex-row h-screen">
-        <aside className="flex-2 flex bg-mist-950 rounded-r-2xl flex-col overflow-hidden">
-          <div className="flex flex-row p-2 border-b border-mist-800">
-            <div className="flex-1 py-2">Peers</div>
-            <button
-              onClick={() => {
-                sendCommand("getpeers", []);
-                sendCommand("getpeerid", []);
-              }}
-              className="bg-mist-900 px-3.5 py-2  rounded-full hover:bg-mist-700 transition-colors"
-            >
-              R
-            </button>
-          </div>
-          <div className="flex-1 overflow-hidden mt-2">
-            <ul className="overflow-hidden">
-              <li
-                className="m-1 p-2 overflow-x-hidden bg-mist-900 rounded-md"
-                onClick={() => {
-                  navigator.clipboard.writeText(localPeerid);
-                }}
-              >
-                {localPeerid}
-              </li>
-              <hr className="my-3 text-mist-800"></hr>
-              {peers.map((peer, i) => (
-                <>
-                  <li
-                    onClick={() => {
-                      setPeerid(peer);
-                    }}
-                    className="m-1 p-2 bg-mist-800 rounded-md overflow-x-hidden text-mist-200"
-                    key={i}
-                  >
-                    {peer}
-                  </li>
-                </>
-              ))}
-            </ul>
-          </div>
-        </aside>
+        <SideBar
+          localPeerid={localPeerid}
+          peers={peers}
+          sendCommand={sendCommand}
+          setPeerid={setPeerid}
+          peerid={peerid}
+        />
 
         <div className="flex-6 flex flex-col h-screen">
-          <h1 className="border-b border-mist-800 text-xl p-3.5">Knot</h1>
+          <h1 className="border-b border-mist-600 text-xl p-3.5">
+            Knot
+            <button
+              onClick={() => {
+                setAddPeerOverlay(true);
+              }}
+              className="float-right hover:text-mist-600 transition-colors"
+            >
+              +
+            </button>
+          </h1>
           <div className="overflow-auto p-3 mt-2 flex-1">
             <ul className="h-full">
               <li>Message</li>
@@ -156,7 +141,7 @@ setMessageList((prev) => [...prev, message]);
             }}
             className="p-3"
           >
-            <div className="p-2 bg-mist-950 rounded-2xl flex flex-row text-white">
+            <div className="p-2 bg-mist-900 rounded-2xl flex flex-row text-white">
               <input
                 type="text"
                 className="ml-2 w-full h-12 outline-0"
