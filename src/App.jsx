@@ -43,11 +43,11 @@ function App() {
         switch (event.payload.command) {
           case "getpeers":
             setPeers(cleanPeers(event.payload.response));
-            console.log(peers);
+            console.log("Peers: ", peers);
             break;
           case "getpeerid":
             setLocalPeerid(cleanPeers(event.payload.response));
-            console.log(localPeerid);
+            console.log("LocalPeerid: ", localPeerid);
             break;
         }
       });
@@ -86,6 +86,7 @@ function App() {
         message: message,
         peerid: peerid,
       });
+setMessageList((prev) => [...prev, message]);	
     } catch (error) {
       console.error("Error en Knot:", error);
     }
@@ -95,7 +96,7 @@ function App() {
     <main className="w-screen h-screen bg-black text-white flex flex-col">
       {/* <h1 className="text-white font-bold text-3xl p-4">Knot-chat</h1>*/}
 
-      <div className="flex-1 flex flex-row">
+      <div className="flex-1 flex flex-row h-screen">
         <aside className="flex-2 flex bg-mist-950 rounded-r-2xl flex-col overflow-hidden">
           <div className="flex flex-row p-2 border-b border-mist-800">
             <div className="flex-1 py-2">Peers</div>
@@ -137,10 +138,10 @@ function App() {
           </div>
         </aside>
 
-        <div className="flex-6 flex flex-col">
+        <div className="flex-6 flex flex-col h-screen">
           <h1 className="border-b border-mist-800 text-xl p-3.5">Knot</h1>
-          <div className="flex-1 p-3 mt-2">
-            <ul>
+          <div className="overflow-auto p-3 mt-2 flex-1">
+            <ul className="h-full">
               <li>Message</li>
               {messageList.map((mess, i) => (
                 <li key={i}>{mess}</li>
