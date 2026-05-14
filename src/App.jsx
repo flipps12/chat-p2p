@@ -56,7 +56,7 @@ function App() {
 
       // Escucha el RTT de los pings
       unlistenByte = await listen("message", (event) => {
-        setMessageList((prev) => [...prev, event.payload]);
+        setMessageList((prev) => [...prev, JSON.parse(event.payload)]);
       });
     }
 
@@ -84,18 +84,19 @@ function App() {
 
   async function sendMessage() {
     try {
+      let parsedMessage = { message, timestamp: Date.now() };
       await invoke("send_message_command", {
-        message: message,
+        message: JSON.stringify(parsedMessage),
         peerid: peerid,
       });
-      setMessageList((prev) => [...prev, message]);
+      setMessageList((prev) => [...prev, parsedMessage]);
     } catch (error) {
       console.error("Error en Knot:", error);
     }
   }
 
   return (
-    <main className="w-screen h-screen bg-olive-950 text-white flex flex-col p-3">
+    <main className="w-screen h-screen bg-olive-950 text-white flex flex-col">
       {/* <h1 className="text-white font-bold text-3xl p-4">Knot-chat</h1>*/}
 
       {addPeerOverlay ? (
@@ -116,8 +117,8 @@ function App() {
           peerid={peerid}
         />
 
-        <div className="flex-6 flex flex-col mx-2 rounded-2xl">
-          <h1 className="border-b border-mist-600 text-xl p-3.5">
+        <div className="w-[80vw] h-screen flex flex-col rounded-2xl">
+          <h1 className="border-b border-mist-600 text-xl p-3.5 m-2">
             Knot
             <button
               onClick={() => {
@@ -128,21 +129,39 @@ function App() {
               +
             </button>
           </h1>
-          <div className="overflow-auto p-4 mt-2 flex-1">
+          {/* <div className="overflow-y-auto p-4 mt-2 flex-1">
             <ul className="h-full">
-              {/* <li>Message</li>*/}
+
               {messageList.map((mess, i) => (
-                <li key={i}>{mess}</li>
+                <li key={i} className="overflow-hidden">
+                  <span className="float-right">
+                    {new Date(mess.timestamp).toLocaleString()}
+                  </span>
+                  <p className="text-wrap">{mess.message} </p>
+                </li>
+              ))}
+            </ul>
+          </div>*/}
+          <div className="overflow-y-auto p-4 mt-2 flex-1">
+            <ul className="h-full space-y-4">
+              {messageList.map((mess, i) => (
+                <li key={i} className="flex flex-col">
+                  <div className="flex justify-end">
+                    <span className="text-xs text-gray-500">
+                      {new Date(mess.timestamp).toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="text-wrap wrap-break-word">{mess.message}</p>
+                </li>
               ))}
             </ul>
           </div>
-
           <form
             onSubmit={(e) => {
               e.preventDefault();
               sendMessage();
             }}
-            className=""
+            className="m-2"
           >
             <div className="p-2 bg-olive-900 rounded-2xl flex flex-row text-white">
               <input

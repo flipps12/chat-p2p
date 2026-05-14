@@ -1,6 +1,6 @@
 function SideBar({ localPeerid, peers, sendCommand, setPeerid, peerid }) {
   return (
-    <aside className="flex-2 flex bg-olive-900 rounded-3xl flex-col overflow-hidden">
+    <aside className="w-[20vw] flex bg-olive-900 rounded-3xl flex-col overflow-hidden m-2">
       <div className="flex flex-row p-2 border-b border-olive-600">
         <div className="flex-1 py-2">Peers</div>
         <button
