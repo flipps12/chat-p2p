@@ -95,7 +95,7 @@ function App() {
   }
 
   return (
-    <main className="w-screen h-screen bg-black text-white flex flex-col">
+    <main className="w-screen h-screen bg-olive-950 text-white flex flex-col p-3">
       {/* <h1 className="text-white font-bold text-3xl p-4">Knot-chat</h1>*/}
 
       {addPeerOverlay ? (
@@ -104,7 +104,7 @@ function App() {
         <></>
       )}
 
-      <div className="flex-1 flex flex-row h-screen">
+      <div className="flex-1 flex flex-row">
         <SideBar
           localPeerid={localPeerid}
           peers={peers}
@@ -113,7 +113,7 @@ function App() {
           peerid={peerid}
         />
 
-        <div className="flex-6 flex flex-col h-screen">
+        <div className="flex-6 flex flex-col mx-2 rounded-2xl">
           <h1 className="border-b border-mist-600 text-xl p-3.5">
             Knot
             <button
@@ -125,7 +125,7 @@ function App() {
               +
             </button>
           </h1>
-          <div className="overflow-auto p-3 mt-2 flex-1">
+          <div className="overflow-auto p-4 mt-2 flex-1">
             <ul className="h-full">
               <li>Message</li>
               {messageList.map((mess, i) => (
@@ -139,9 +139,9 @@ function App() {
               e.preventDefault();
               sendMessage();
             }}
-            className="p-3"
+            className=""
           >
-            <div className="p-2 bg-mist-900 rounded-2xl flex flex-row text-white">
+            <div className="p-2 bg-olive-900 rounded-2xl flex flex-row text-white">
               <input
                 type="text"
                 className="ml-2 w-full h-12 outline-0"
@@ -151,7 +151,7 @@ function App() {
               />
               <button
                 type="submit"
-                className="h-12 outline-0 bg-mist-950 border border-mist-800 px-6 rounded-xl hover:bg-mist-900"
+                className="h-12 outline-0 bg-olive-950 border border-mist-800 px-6 rounded-xl hover:bg-mist-900"
               >
                 Send
               </button>

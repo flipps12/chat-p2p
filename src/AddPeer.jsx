@@ -8,7 +8,7 @@ function AddPeer({ setAddPeerOverlay }) {
         className="fixed inset-0 z-10 bg-black/70"
       ></div>
       <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-        <div className="bg-mist-900 p-8 rounded-xl shadow-2xl w-full max-w-md pointer-events-auto">
+        <div className="bg-olive-900 p-8 rounded-xl shadow-2xl w-full max-w-md pointer-events-auto">
           <h2 className="text-white mb-4 text-lg font-semibold">
             Conect Peer{" "}
             <button
@@ -22,10 +22,10 @@ function AddPeer({ setAddPeerOverlay }) {
           </h2>
           <input
             type="text"
-            placeholder="12D3KooW..."
-            className="w-full p-3 rounded bg-mist-800 text-white border border-mist-700 focus:outline-none focus:border-blue-500"
+            placeholder="/ip4/127.0.0.1/udp/1234/quic-v1/p2p/12D3KooW..."
+            className="w-full p-3 rounded bg-olive-800 text-white border border-olive-700 focus:outline-none focus:border-emerald-500"
           />
-          <button className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded transition-colors">
+          <button className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded transition-colors">
             Conectar
           </button>
         </div>
