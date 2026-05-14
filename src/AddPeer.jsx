@@ -1,4 +1,13 @@
-function AddPeer({ setAddPeerOverlay }) {
+import { useState } from "react";
+
+function AddPeer({ setAddPeerOverlay, sendCommand }) {
+  const [multiaddr, setMultiaddr] = useState("");
+
+  const handleSubmit = () => {
+    if (multiaddr.length <= 0) return;
+    sendCommand("connect", [multiaddr]);
+  };
+
   return (
     <>
       <div
@@ -21,11 +30,18 @@ function AddPeer({ setAddPeerOverlay }) {
             </button>
           </h2>
           <input
+            onChange={(e) => {
+              setMultiaddr(e.currentTarget.value);
+              // close
+            }}
             type="text"
             placeholder="/ip4/127.0.0.1/udp/1234/quic-v1/p2p/12D3KooW..."
             className="w-full p-3 rounded bg-olive-800 text-white border border-olive-700 focus:outline-none focus:border-emerald-500"
           />
-          <button className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded transition-colors">
+          <button
+            onSubmit={handleSubmit}
+            className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded transition-colors"
+          >
             Conectar
           </button>
         </div>

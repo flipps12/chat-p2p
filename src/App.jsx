@@ -99,7 +99,10 @@ function App() {
       {/* <h1 className="text-white font-bold text-3xl p-4">Knot-chat</h1>*/}
 
       {addPeerOverlay ? (
-        <AddPeer setAddPeerOverlay={setAddPeerOverlay} />
+        <AddPeer
+          setAddPeerOverlay={setAddPeerOverlay}
+          sendCommand={sendCommand}
+        />
       ) : (
         <></>
       )}
@@ -127,7 +130,7 @@ function App() {
           </h1>
           <div className="overflow-auto p-4 mt-2 flex-1">
             <ul className="h-full">
-              <li>Message</li>
+              {/* <li>Message</li>*/}
               {messageList.map((mess, i) => (
                 <li key={i}>{mess}</li>
               ))}
